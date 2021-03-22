@@ -81,7 +81,13 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 			}
 			e.Field(i).SetInt(int64(newInt))
 		case "[]string":
-			continue
+			newStringArray, err := f.GetStringArray()
+			if err != nil {
+				return err
+			}
+			if e.Field(i).CanSet() {
+				e.Field(i).Set(newStringArray)
+			}
 		case "[]byte":
 			newBytes, err := f.GetBytes()
 			if err != nil {
@@ -93,6 +99,34 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 		}
 	}
 	return nil
+}
+
+func (f *ConsumeFuzzer) GetStringArray() (reflect.Value, error) {
+	// The max size of the array:
+	max := 20
+	
+	arraySize := f.position
+	if arraySize>max {
+		arraySize = max
+	}
+	elemType := reflect.TypeOf("string")
+	stringArray := reflect.MakeSlice(reflect.SliceOf(elemType), arraySize, arraySize)
+	if f.position+arraySize >= len(f.data) {
+		return stringArray, errors.New("Could not make string array")
+	}
+
+	for i:=0; i<arraySize; i++ {
+		stringSize := int(f.data[f.position])
+		
+		if f.position+stringSize >= len(f.data) {
+			return stringArray, nil
+		}
+		stringToAppend := string(f.data[f.position:f.position+stringSize])
+		strVal := reflect.ValueOf(stringToAppend)
+		stringArray = reflect.Append(stringArray, strVal)
+		f.position = f.position + stringSize
+	}
+	return stringArray, nil
 }
 
 func (f *ConsumeFuzzer) GetInt() (int, error) {
