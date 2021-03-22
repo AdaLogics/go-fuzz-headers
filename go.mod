@@ -1,3 +1,3 @@
-module github.com/AdamKorcz/go-fuzz-headers
+module github.com/AdaLogics/go-fuzz-headers
 
 go 1.13
