@@ -144,7 +144,7 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	}
 	length := int(f.data[f.position])
 	if length==0 {
-		return errors.New("Zero-length is not supported")
+		return nil, errors.New("Zero-length is not supported")
 	}
 	if f.position+length >= len(f.data) {
 		return nil, errors.New("Not enough bytes to create byte array")
