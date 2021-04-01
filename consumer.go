@@ -61,6 +61,7 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 	if err != nil {
 		return err
 	}
+	return nil
 }
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
@@ -110,12 +111,12 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
             e.Set(reflect.MakeMap(e.Type()))
             for i := 0; i < 5; i++ {
                 key := reflect.New(e.Type().Key()).Elem()
-                err := f.fuzzStruct(key, f)
+                err := f.fuzzStruct(key)
                 if err != nil {
                     return err
                 }
                 val := reflect.New(e.Type().Elem()).Elem()
-                err = f.fuzzStruct(val, f)
+                err = f.fuzzStruct(val)
                 if err != nil {
                     return err
                 }
