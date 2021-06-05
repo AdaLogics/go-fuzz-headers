@@ -215,7 +215,7 @@ func (f *ConsumeFuzzer) GetInt() (int, error) {
 
 func (f *ConsumeFuzzer) GetByte() (byte, error) {
 	if f.position+1==len(f.data) {
-		return []byte{0x00}, errors.New("Not enough bytes to get byte")		
+		return 0x00, errors.New("Not enough bytes to get byte")		
 	}
 	f.position += 1
 	returnByte := f.data[f.position]
