@@ -92,8 +92,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
         if e.CanSet() {
             e.Set(uu)
         }
-    case reflect.Uint64:
-        
+    case reflect.Uint64:        
         newInt, err := f.GetInt()
         if err != nil {
             return err
@@ -213,6 +212,16 @@ func (f *ConsumeFuzzer) GetInt() (int, error) {
 	f.position++
 	return returnInt, nil
 }
+
+func (f *ConsumeFuzzer) GetByte() (byte, error) {
+	if f.position+1==len(data) {
+		return nil, errors.New("Not enough bytes to get byte")		
+	}
+	f.position += 1
+	returnByte := f.data[f.position]
+	return returnByte, nil
+}
+
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if f.position >= len(f.data) {
