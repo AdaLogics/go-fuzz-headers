@@ -65,6 +65,9 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 }
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
+    if !e.CanInterface() {
+        return nil
+    }
     switch e.Kind() {
     case reflect.Struct:
         for i := 0; i < e.NumField(); i++ {
