@@ -59,7 +59,7 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 	if !v.CanSet() {
 		return nil
 	}
-	e = v.Elem()
+	e := v.Elem()
 	err := f.fuzzStruct(e)
 	if err != nil {
 		return err
