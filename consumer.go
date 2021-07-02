@@ -96,7 +96,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		}
 		numOfElements := (randQty % maxElements)
 		if numOfElements != 0 {
-			numoe := numOfElements
+			numoe := numOfElements+1
 			numOfElements = numoe
 		}
 
