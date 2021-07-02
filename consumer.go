@@ -1,6 +1,7 @@
 package gofuzzheaders
 
 import (
+	"fmt"
 	"errors"
 	"reflect"
 )
