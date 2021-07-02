@@ -100,7 +100,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			numOfElements = numoe
 		}
 
-		uu := reflect.MakeSlice(e.Type(), 0, numOfElements)
+		uu := reflect.MakeSlice(e.Type(), numOfElements, numOfElements)
 		fmt.Println("numOfElements: ", numOfElements)
 		for i := 0; i < numOfElements; i++ {
 			fmt.Println(i)
