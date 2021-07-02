@@ -93,7 +93,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		if err != nil {
 			return err
 		}
-		numOfElements := randQty % maxElements
+		numOfElements := randQty % (maxElements-1)
 		uu := reflect.MakeSlice(e.Type(), 0, numOfElements)
 		for i := 0; i < numOfElements; i++ {
 			err := f.fuzzStruct(uu.Index(i))
