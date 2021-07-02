@@ -56,9 +56,9 @@ func (f *ConsumeFuzzer) Split(minCalls, maxCalls int) error {
 
 func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 	v := reflect.ValueOf(targetStruct)
-	if !v.CanSet() {
+	/*if !v.CanSet() {
 		return errors.New("This interface cannot be set")
-	}
+	}*/
 	e := v.Elem()
 	err := f.fuzzStruct(e)
 	if err != nil {
