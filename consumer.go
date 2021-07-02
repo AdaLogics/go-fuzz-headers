@@ -142,7 +142,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		}
 	case reflect.Ptr:
 		if e.CanSet() {
-			e.Set(reflect.New(v.Type().Elem()))
+			e.Set(reflect.New(e.Type().Elem()))
 			err := f.fuzzStruct(e.Elem())
 			if err != nil {
 				return err
