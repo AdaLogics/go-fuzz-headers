@@ -68,72 +68,93 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 }
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
-    if !e.CanInterface() {
-        return nil
-    }
-    switch e.Kind() {
-    case reflect.Struct:
-        for i := 0; i < e.NumField(); i++ {
-            err := f.fuzzStruct(e.Field(i))
-            if err != nil {
-                return err
-            }
-        }
-    case reflect.String:
-        str, err := f.GetString()
-        if err != nil {
-            return err
-        }
-        if e.CanSet() {
-            e.SetString(str)
-        }
-    case reflect.Slice:
-        uu := reflect.MakeSlice(e.Type(), 5, 5)
-        for i := 0; i < 5; i++ {
-            err := f.fuzzStruct(uu.Index(i))
-            if err != nil {
-                return err
-            }
-        }
-        if e.CanSet() {
-            e.Set(uu)
-        }
-    case reflect.Uint64:        
-        newInt, err := f.GetInt()
-        if err != nil {
-            return err
-        }
-        e.SetUint(uint64(newInt))
-    case reflect.Int:
-        
-        newInt, err := f.GetInt()
-        if err != nil {
-            return err
-        }
-        e.SetInt(int64(newInt))        
-    case reflect.Map:
-        if e.CanSet() {
-            e.Set(reflect.MakeMap(e.Type()))
-            for i := 0; i < 5; i++ {
-                key := reflect.New(e.Type().Key()).Elem()
-                err := f.fuzzStruct(key)
-                if err != nil {
-                    return err
-                }
-                val := reflect.New(e.Type().Elem()).Elem()
-                err = f.fuzzStruct(val)
-                if err != nil {
-                    return err
-                }
-                e.SetMapIndex(key, val)
-            }
-        }
-    default:
-        return nil
-    }
-    return nil
-}
+	if !e.CanInterface() {
+		return nil
+	}
+	switch e.Kind() {
+	case reflect.Struct:
+		for i := 0; i < e.NumField(); i++ {
+			err := f.fuzzStruct(e.Field(i))
+			if err != nil {
+				return err
+			}
+		}
+	case reflect.String:
+		str, err := f.GetString()
+		if err != nil {
+			return err
+		}
+		if e.CanSet() {
+			e.SetString(str)
+		}
+	case reflect.Slice:
+		maxElements := 50
+		randQty, err := f.GetInt()
+		if err != nil {
+			return err
+		}
+		numOfElements := randQty % maxElements
+		uu := reflect.MakeSlice(e.Type(), 0, numOfElements)
+		for i := 0; i < numOfElements; i++ {
+			err := f.fuzzStruct(uu.Index(i))
+			if err != nil {
+				return err
+			}
+		}
+		if e.CanSet() {
+			e.Set(uu)
+		}
+	case reflect.Uint64:
+		newInt, err := f.GetInt()
+		if err != nil {
+			return err
+		}
+		e.SetUint(uint64(newInt))
+	case reflect.Int:
 
+		newInt, err := f.GetInt()
+		if err != nil {
+			return err
+		}
+		e.SetInt(int64(newInt))
+	case reflect.Map:
+		if e.CanSet() {
+			e.Set(reflect.MakeMap(e.Type()))
+			maxElements := 50
+			randQty, err := f.GetInt()
+			if err != nil {
+				return err
+			}
+			numOfElements := randQty % maxElements
+			for i := 0; i < numOfElements; i++ {
+				key := reflect.New(e.Type().Key()).Elem()
+				err := f.fuzzStruct(key)
+				if err != nil {
+					return err
+				}
+				val := reflect.New(e.Type().Elem()).Elem()
+				err = f.fuzzStruct(val)
+				if err != nil {
+					return err
+				}
+				e.SetMapIndex(key, val)
+			}
+		}
+	case reflect.Ptr:
+		if e.CanSet() {
+			e.Set(reflect.New(v.Type().Elem()))
+			err := f.fuzzStruct(e.Elem())
+			if err != nil {
+				return err
+			}
+			e.Set(reflect.Zero(e.Type()))
+			return nil
+		}
+	default:
+		return nil
+	}
+	return nil
+}
 
 func (f *ConsumeFuzzer) OldGenerateStruct(targetStruct interface{}) error {
 	if f.position >= len(f.data) {
@@ -220,14 +241,13 @@ func (f *ConsumeFuzzer) GetInt() (int, error) {
 }
 
 func (f *ConsumeFuzzer) GetByte() (byte, error) {
-	if f.position+1>=len(f.data) {
-		return 0x00, errors.New("Not enough bytes to get byte")		
+	if f.position+1 >= len(f.data) {
+		return 0x00, errors.New("Not enough bytes to get byte")
 	}
 	f.position += 1
 	returnByte := f.data[f.position]
 	return returnByte, nil
 }
-
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if f.position >= len(f.data) {
