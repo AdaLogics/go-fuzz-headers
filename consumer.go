@@ -1,7 +1,6 @@
 package gofuzzheaders
 
 import (
-	"fmt"
 	"errors"
 	"reflect"
 )
@@ -94,16 +93,11 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		if err != nil {
 			return err
 		}
-		numOfElements := (randQty % maxElements)
-		if numOfElements != 0 {
-			numoe := numOfElements-1
-			numOfElements = numoe
-		}
+		numOfElements := randQty%maxElements
 
 		uu := reflect.MakeSlice(e.Type(), numOfElements, numOfElements)
-		fmt.Println("numOfElements: ", numOfElements)
+		
 		for i := 0; i < numOfElements; i++ {
-			fmt.Println(i)
 			err := f.fuzzStruct(uu.Index(i))
 			if err != nil {
 				return err
