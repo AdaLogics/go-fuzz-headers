@@ -158,52 +158,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 	return nil
 }
 
-func (f *ConsumeFuzzer) OldGenerateStruct(targetStruct interface{}) error {
-	if f.position >= len(f.data) {
-		return errors.New("Not enough bytes to proceed")
-	}
-	e := reflect.ValueOf(targetStruct).Elem()
-	for i := 0; i < e.NumField(); i++ {
-		fieldtype := e.Type().Field(i).Type.String()
-		switch ft := fieldtype; ft {
-		case "string":
-			stringChunk, err := f.GetString()
-			if err != nil {
-				return err
-			}
-			e.Field(i).SetString(stringChunk)
-		case "bool":
-			newBool, err := f.GetBool()
-			if err != nil {
-				return err
-			}
-			e.Field(i).SetBool(newBool)
-		case "int":
-			newInt, err := f.GetInt()
-			if err != nil {
-				return err
-			}
-			e.Field(i).SetInt(int64(newInt))
-		case "[]string":
-			newStringArray, err := f.GetStringArray()
-			if err != nil {
-				return err
-			}
-			if e.Field(i).CanSet() {
-				e.Field(i).Set(newStringArray)
-			}
-		case "[]byte":
-			newBytes, err := f.GetBytes()
-			if err != nil {
-				return err
-			}
-			e.Field(i).SetBytes(newBytes)
-		default:
-			continue
-		}
-	}
-	return nil
-}
+
 
 func (f *ConsumeFuzzer) GetStringArray() (reflect.Value, error) {
 	// The max size of the array:
