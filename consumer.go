@@ -73,7 +73,9 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 	case reflect.Struct:
 		for i := 0; i < e.NumField(); i++ {
 			vt := e.Type().Field(i).Name
-			fmt.Println("Trying to set ", vt, "...")
+			if vt=="SidecarScope" {
+				fmt.Println("Trying to set ", vt, "...")
+			}
 			err := f.fuzzStruct(e.Field(i))
 			if err != nil {
 				return err
@@ -156,7 +158,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			e.Set(reflect.Zero(e.Type()))
 			return nil
 		}else{
-			fmt.Printf("Cannot set")
+			fmt.Printf("Cannot set\n")
 		}
 	default:
 		return nil
