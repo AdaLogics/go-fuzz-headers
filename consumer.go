@@ -73,11 +73,14 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 	switch e.Kind() {
 	case reflect.Struct:
 		for i := 0; i < e.NumField(); i++ {
-			vt := e.Type().Field(i).Name
+			//vt := e.Type().Field(i).Name
+			var v reflect.Value
 			if !e.Field(i).CanSet() {
-				e.Field(i) = reflect.NewAt(e.Field(i).Type(), unsafe.Pointer(e.Field(i).UnsafeAddr())).Elem()
+				v := reflect.NewAt(e.Field(i).Type(), unsafe.Pointer(e.Field(i).UnsafeAddr())).Elem()
+			}else{
+				v := e.Field(i)
 			}
-			err := f.fuzzStruct(e.Field(i))
+			err := f.fuzzStruct(v)
 			if err != nil {
 				return err
 			}
