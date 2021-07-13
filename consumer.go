@@ -2,6 +2,7 @@ package gofuzzheaders
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -152,6 +153,8 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			}
 			e.Set(reflect.Zero(e.Type()))
 			return nil
+		}else{
+			fmt.Printf("Cannot set: %s\n", e.Type().Name)
 		}
 	default:
 		return nil
