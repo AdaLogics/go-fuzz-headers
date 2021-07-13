@@ -68,11 +68,11 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 }
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
-	if !e.CanInterface() {
-		return nil
-	}
 	switch e.Kind() {
 	case reflect.Struct:
+		if !e.CanInterface() {
+			return nil
+		}
 		for i := 0; i < e.NumField(); i++ {
 			err := f.fuzzStruct(e.Field(i))
 			if err != nil {
@@ -247,3 +247,4 @@ func (f *ConsumeFuzzer) GetBool() (bool, error) {
 		return false, nil
 	}
 }
+
