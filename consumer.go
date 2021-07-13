@@ -71,7 +71,9 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 	switch e.Kind() {
 	case reflect.Struct:
-		for i := 0; i < e.NumField(); i++ {			
+		for i := 0; i < e.NumField(); i++ {
+			vt := e.Type().Field(i).Name
+			fmt.Println("Trying to set ", vt, "...")
 			err := f.fuzzStruct(e.Field(i))
 			if err != nil {
 				return err
@@ -154,7 +156,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			e.Set(reflect.Zero(e.Type()))
 			return nil
 		}else{
-			fmt.Printf("Cannot set: %s\n", e.Type().Name)
+			fmt.Printf("Cannot set")
 		}
 	default:
 		return nil
