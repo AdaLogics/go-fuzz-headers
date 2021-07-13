@@ -2,8 +2,9 @@ package gofuzzheaders
 
 import (
 	"errors"
-	"fmt"
+	//"fmt"
 	"reflect"
+	"unsafe"
 )
 
 type ConsumeFuzzer struct {
@@ -74,7 +75,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		for i := 0; i < e.NumField(); i++ {
 			vt := e.Type().Field(i).Name
 			if !e.Field(i).CanSet() {
-				fmt.Println("Cannot set ", vt)
+				e.Field(i) = reflect.NewAt(e.Field(i).Type(), unsafe.Pointer(e.Field(i).UnsafeAddr())).Elem()
 			}
 			err := f.fuzzStruct(e.Field(i))
 			if err != nil {
