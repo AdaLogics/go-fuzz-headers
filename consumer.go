@@ -2,7 +2,7 @@ package gofuzzheaders
 
 import (
 	"errors"
-	"fmt"
+	//"fmt"
 	"reflect"
 )
 
@@ -74,7 +74,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		for i := 0; i < e.NumField(); i++ {
 			vt := e.Type().Field(i).Name
 			if vt=="SidecarScope" {
-				fmt.Println("Trying to set ", vt, "...")
+				//fmt.Println("Trying to set ", vt, "...")
 			}
 			err := f.fuzzStruct(e.Field(i))
 			if err != nil {
@@ -158,7 +158,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			e.Set(reflect.Zero(e.Type()))
 			return nil
 		}else{
-			fmt.Printf("Cannot set\n")
+			//fmt.Printf("Cannot set\n")
 		}
 	default:
 		return nil
