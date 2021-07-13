@@ -69,14 +69,9 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 }
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
-	if !e.CanInterface() {
-		return errors.New("Can not interface")
-	}else{
-		fmt.Println("Can interface")
-	}
 	switch e.Kind() {
 	case reflect.Struct:
-		for i := 0; i < e.NumField(); i++ {
+		for i := 0; i < e.NumField(); i++ {			
 			err := f.fuzzStruct(e.Field(i))
 			if err != nil {
 				return err
@@ -114,14 +109,18 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		if err != nil {
 			return err
 		}
-		e.SetUint(uint64(newInt))
+		if e.CanSet() {
+			e.SetUint(uint64(newInt))
+		}
 	case reflect.Int:
 
 		newInt, err := f.GetInt()
 		if err != nil {
 			return err
 		}
-		e.SetInt(int64(newInt))
+		if e.CanSet() {
+			e.SetInt(int64(newInt))
+		}
 	case reflect.Map:
 		if e.CanSet() {
 			e.Set(reflect.MakeMap(e.Type()))
