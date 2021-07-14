@@ -8,11 +8,12 @@ import (
 )
 
 type ConsumeFuzzer struct {
-	data          []byte
-	CommandPart   []byte
-	RestOfArray   []byte
-	NumberOfCalls int
-	position      int
+	data          		 []byte
+	CommandPart   		 []byte
+	RestOfArray   		 []byte
+	NumberOfCalls 		 int
+	position      		 int
+	fuzzUnexportedFields bool
 }
 
 func IsDivisibleBy(n int, divisibleby int) bool {
@@ -56,6 +57,14 @@ func (f *ConsumeFuzzer) Split(minCalls, maxCalls int) error {
 	return nil
 }
 
+func (f *ConsumeFuzzer) AllowUnexportedFields() {
+	f.fuzzUnexportedFields = true
+}
+
+func (f *ConsumeFuzzer) DisallowUnexportedFields() {
+	f.fuzzUnexportedFields = false
+}
+
 func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 	v := reflect.ValueOf(targetStruct)
 	/*if !v.CanSet() {
@@ -73,10 +82,14 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 	switch e.Kind() {
 	case reflect.Struct:
 		for i := 0; i < e.NumField(); i++ {
+			// Useful for debugging, so we leave it for now:
 			//vt := e.Type().Field(i).Name
+			//fmt.Println("vt:::::::::::::::::::::: ", vt)
 			var v reflect.Value
 			if !e.Field(i).CanSet() {
-				v = reflect.NewAt(e.Field(i).Type(), unsafe.Pointer(e.Field(i).UnsafeAddr())).Elem()
+				if f.fuzzUnexportedFields{
+					v = reflect.NewAt(e.Field(i).Type(), unsafe.Pointer(e.Field(i).UnsafeAddr())).Elem()
+				}
 			}else{
 				v = e.Field(i)
 			}
@@ -158,10 +171,15 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			if err != nil {
 				return err
 			}
-			e.Set(reflect.Zero(e.Type()))
 			return nil
-		}else{
-			//fmt.Printf("Cannot set\n")
+		}
+	case reflect.Uint8:
+		b, err := f.GetByte()
+		if err != nil {
+			return err
+		}
+		if e.CanSet() {
+			e.SetUint(uint64(b))
 		}
 	default:
 		return nil
@@ -212,37 +230,42 @@ func (f *ConsumeFuzzer) GetByte() (byte, error) {
 	if f.position+1 >= len(f.data) {
 		return 0x00, errors.New("Not enough bytes to get byte")
 	}
-	f.position += 1
 	returnByte := f.data[f.position]
+	f.position += 1
 	return returnByte, nil
 }
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
-	if f.position >= len(f.data) {
+	length := int(f.data[f.position])
+	byteBegin := f.position+1
+	if byteBegin >= len(f.data) {
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
-	length := int(f.data[f.position])
 	if length == 0 {
 		return nil, errors.New("Zero-length is not supported")
 	}
-	if f.position+length >= len(f.data) {
+	if byteBegin+length >= len(f.data) {
+		//panic(length)
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
-	b := f.data[f.position : f.position+length]
-	f.position = f.position + length
+	b := f.data[byteBegin : byteBegin+length]
+	f.position = byteBegin + length
 	return b, nil
 }
 
 func (f *ConsumeFuzzer) GetString() (string, error) {
-	if f.position >= len(f.data) {
-		return "nil", errors.New("Not enough bytes to create string")
-	}
 	length := int(f.data[f.position])
-	if f.position+length >= len(f.data) {
+	byteBegin := f.position+1
+	if byteBegin >= len(f.data) {
+		panic(byteBegin)
 		return "nil", errors.New("Not enough bytes to create string")
 	}
-	str := string(f.data[f.position : f.position+length])
-	f.position = f.position + length
+	if byteBegin+length > len(f.data) {
+		panic(length)
+		return "nil", errors.New("Not enough bytes to create string")
+	}
+	str := string(f.data[byteBegin : byteBegin+length])
+	f.position = byteBegin + length
 	return str, nil
 }
 
