@@ -245,7 +245,6 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 		return nil, errors.New("Zero-length is not supported")
 	}
 	if byteBegin+length >= len(f.data) {
-		//panic(length)
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
 	b := f.data[byteBegin : byteBegin+length]
@@ -260,7 +259,6 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 	length := int(f.data[f.position])
 	byteBegin := f.position+1
 	if byteBegin >= len(f.data) {
-		panic(byteBegin)
 		return "nil", errors.New("Not enough bytes to create string")
 	}
 	if byteBegin+length > len(f.data) {
