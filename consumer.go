@@ -227,7 +227,7 @@ func (f *ConsumeFuzzer) GetInt() (int, error) {
 }
 
 func (f *ConsumeFuzzer) GetByte() (byte, error) {
-	if f.position+1 >= len(f.data) {
+	if f.position >= len(f.data) {
 		return 0x00, errors.New("Not enough bytes to get byte")
 	}
 	returnByte := f.data[f.position]
@@ -282,3 +282,10 @@ func (f *ConsumeFuzzer) GetBool() (bool, error) {
 	}
 }
 
+func (f *ConsumeFuzzer) FuzzMap(m interface{}) (error) {
+	err := f.GenerateStruct(m)
+	if err != nil {
+		return err
+	}
+	return nil
+}
