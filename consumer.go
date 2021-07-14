@@ -264,7 +264,6 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 		return "nil", errors.New("Not enough bytes to create string")
 	}
 	if byteBegin+length > len(f.data) {
-		panic(length)
 		return "nil", errors.New("Not enough bytes to create string")
 	}
 	str := string(f.data[byteBegin : byteBegin+length])
