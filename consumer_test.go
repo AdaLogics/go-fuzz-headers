@@ -1,7 +1,7 @@
 package gofuzzheaders
 
 import (
-	//"fmt"
+	"fmt"
 	"testing"
 )
 
@@ -83,5 +83,46 @@ func TestStruct_fuzzing2(t *testing.T) {
 	}
 	if string(ts3.Field3.Struct2Field2)!="AB" {
 		t.Errorf("ts3.Field3.Struct2Field2 was %v but should be 'AB'", ts3.Field3.Struct2Field2)
+	}
+}
+
+func TestFuzzMap1(t *testing.T) {
+	data := []byte{0x02, // Length of map
+				   0x04, 0x4B, 0x65, 0x79, 0x31, // "Key1"
+				   0x04, 0x56, 0x61, 0x6C, 0x31, // "Val1"
+				   0x04, 0x4B, 0x65, 0x79, 0x32, // "Key2"
+				   0x04, 0x56, 0x61, 0x6C, 0x32} // "Val2"
+	var m map[string]string	
+	fuzz1 := NewConsumer(data)
+	err := fuzz1.FuzzMap(&m)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	if m["Key1"]!="Val1" {
+		t.Errorf("m[\"Key1\"] should be \"Val1\" but should be")
+	}
+	if m["Key2"]!="Val2" {
+		t.Errorf("m[\"Key2\"] should be \"Val2\" but should be")
+	}
+}
+
+func TestFuzzMap2(t *testing.T) {
+	data := []byte{0x02, // Length of map
+				   0x04, 0x4B, 0x65, 0x79, 0x31, // "Key1"
+				   0x04, 0x56, 0x61, 0x6C, 0x31, // "Val1"
+				   0x04, 0x4B, 0x65, 0x79, 0x32, // "Key2"
+				   0x04, 0x56, 0x61, 0x6C, 0x32} // "Val2"
+	var m map[string][]byte	
+	fuzz1 := NewConsumer(data)
+	err := fuzz1.FuzzMap(&m)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	fmt.Printf("%+v\n", m)
+	if string(m["Key1"])!="Val1" {
+		t.Errorf("m[\"Key1\"] should be \"Val1\" but should be")
+	}
+	if string(m["Key2"])!="Val2" {
+		t.Errorf("m[\"Key2\"] should be \"Val2\" but should be")
 	}
 }
