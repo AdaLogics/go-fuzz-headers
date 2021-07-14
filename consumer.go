@@ -227,6 +227,9 @@ func (f *ConsumeFuzzer) GetInt() (int, error) {
 }
 
 func (f *ConsumeFuzzer) GetByte() (byte, error) {
+	if len(f.data)==0 {
+		return nil, errors.New("Not enough bytes to create byte array")
+	}
 	if f.position >= len(f.data) {
 		return 0x00, errors.New("Not enough bytes to get byte")
 	}
@@ -236,6 +239,9 @@ func (f *ConsumeFuzzer) GetByte() (byte, error) {
 }
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
+	if len(f.data)==0 {
+		return nil, errors.New("Not enough bytes to create byte array")
+	}
 	length := int(f.data[f.position])
 	byteBegin := f.position+1
 	if byteBegin >= len(f.data) {
