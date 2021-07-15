@@ -1,6 +1,8 @@
 package gofuzzheaders
 
 import (
+	"archive/tar"
+	"bytes"
 	"errors"
 	//"fmt"
 	"reflect"
@@ -8,11 +10,11 @@ import (
 )
 
 type ConsumeFuzzer struct {
-	data          		 []byte
-	CommandPart   		 []byte
-	RestOfArray   		 []byte
-	NumberOfCalls 		 int
-	position      		 int
+	data                 []byte
+	CommandPart          []byte
+	RestOfArray          []byte
+	NumberOfCalls        int
+	position             int
 	fuzzUnexportedFields bool
 }
 
@@ -87,10 +89,10 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			//fmt.Println("vt:::::::::::::::::::::: ", vt)
 			var v reflect.Value
 			if !e.Field(i).CanSet() {
-				if f.fuzzUnexportedFields{
+				if f.fuzzUnexportedFields {
 					v = reflect.NewAt(e.Field(i).Type(), unsafe.Pointer(e.Field(i).UnsafeAddr())).Elem()
 				}
-			}else{
+			} else {
 				v = e.Field(i)
 			}
 			err := f.fuzzStruct(v)
@@ -112,10 +114,10 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		if err != nil {
 			return err
 		}
-		numOfElements := randQty%maxElements
+		numOfElements := randQty % maxElements
 
 		uu := reflect.MakeSlice(e.Type(), numOfElements, numOfElements)
-		
+
 		for i := 0; i < numOfElements; i++ {
 			err := f.fuzzStruct(uu.Index(i))
 			if err != nil {
@@ -187,8 +189,6 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 	return nil
 }
 
-
-
 func (f *ConsumeFuzzer) GetStringArray() (reflect.Value, error) {
 	// The max size of the array:
 	max := 20
@@ -227,7 +227,7 @@ func (f *ConsumeFuzzer) GetInt() (int, error) {
 }
 
 func (f *ConsumeFuzzer) GetByte() (byte, error) {
-	if len(f.data)==0 {
+	if len(f.data) == 0 {
 		return 0x00, errors.New("Not enough bytes to get byte")
 	}
 	if f.position >= len(f.data) {
@@ -239,11 +239,11 @@ func (f *ConsumeFuzzer) GetByte() (byte, error) {
 }
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
-	if len(f.data)==0 || f.position==len(f.data) {
+	if len(f.data) == 0 || f.position >= len(f.data) {
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
 	length := int(f.data[f.position])
-	byteBegin := f.position+1
+	byteBegin := f.position + 1
 	if byteBegin >= len(f.data) {
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
@@ -263,7 +263,7 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 		return "nil", errors.New("Not enough bytes to create string")
 	}
 	length := int(f.data[f.position])
-	byteBegin := f.position+1
+	byteBegin := f.position + 1
 	if byteBegin >= len(f.data) {
 		return "nil", errors.New("Not enough bytes to create string")
 	}
@@ -288,10 +288,52 @@ func (f *ConsumeFuzzer) GetBool() (bool, error) {
 	}
 }
 
-func (f *ConsumeFuzzer) FuzzMap(m interface{}) (error) {
+func (f *ConsumeFuzzer) FuzzMap(m interface{}) error {
 	err := f.GenerateStruct(m)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// TarBytes returns valid tar bytes for a tar archive
+func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+
+	numberOfFiles, err := f.GetInt()
+	if err != nil {
+		return nil, err
+	}
+	maxNoOfFiles := 100000
+	for i := 0; i < numberOfFiles%maxNoOfFiles; i++ {
+		filename, err := f.GetString()
+		if err != nil {
+			return nil, err
+		}
+		filebody, err := f.GetBytes()
+		if err != nil {
+			return nil, err
+		}
+		hdr := &tar.Header{}
+		err = f.GenerateStruct(hdr)
+		if err != nil {
+			return nil, err
+		}
+		hdr.Name = filename
+		hdr.Size = int64(len(filebody))
+		hdr.Mode = 0600
+
+		if err := tw.WriteHeader(hdr); err != nil {
+			return nil, err
+		}
+		if _, err := tw.Write(filebody); err != nil {
+			return nil, err
+		}
+	}
+	if err := tw.Close(); err != nil {
+		return nil, err
+	}
+	//fmt.Println(string(buf.Bytes()))
+	return buf.Bytes(), nil
 }
