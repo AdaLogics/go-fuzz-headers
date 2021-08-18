@@ -296,7 +296,7 @@ func (f *ConsumeFuzzer) FuzzMap(m interface{}) error {
 	return nil
 }
 
-// TarBytes returns valid tar bytes for a tar archive
+// TarBytes returns valid bytes for a tar archive
 func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
