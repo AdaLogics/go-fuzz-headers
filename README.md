@@ -1,49 +1,82 @@
 # go-fuzz-headers
 This repository contains various helper functions to be used with [go-fuzz](https://github.com/dvyukov/go-fuzz).
 
-## Goal
-
-The current goal of go-fuzz-headers is:
-To maintain a series of helper utilities that can be used for golang projects that are integrated into OSS-fuzz and use the go-fuzz engine to fuzz more complicated types than merely strings and data arrays. 
-While go-fuzz-headers can be used when using go-fuzz outside of OSS-fuzz, we do not test such usage and cannot confirm that it is supported.
-
-## Status
-
-The project is under development and will be updated regularly.
-
-Fuzzers that use `GenerateStruct` will not require modifications as more types get supported.
 
 ## Usage
-To make use of the helper functions, a ConsumeFuzzer has to be instantiated:
+Using go-fuzz-headers is easy. First create a new consumer with the bytes provided by the fuzzing engine:
+
 ```go
-f := NewConsumer(data)
+import (
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+)
+data := []byte{"R", "a", "n", "d", "o", "m"}
+f := fuzz.NewConsumer(data)
+
 ```
-To split the input data from the fuzzer into a random set of equally large chunks:
+
+This creates a "Consumer" that consumes the bytes of the input as it uses them to fuzz different types.
+
+After that, `f` can be used to created fuzzed instances of different types. Below are some examples:
+
+### Structs
+One of its most useful features of go-fuzz-headers is its ability to fill structs will pseudo-random values.
+go-fuzz-headers can be used to fuzz the fields of structs with a single line:
 ```go
-err := f.Split(3, 6)
+type Person struct {
+    Name string
+    Age  int
+}
+p := Person{}
+err := f.GenerateStruct(&Person)
 ```
-...after which the consumer has the following available attributes:
+
+This includes nested structs too. In this example, the fuzz Consumer will also insert values in p.BestFriend: 
 ```go
-f.CommandPart = commandPart
-f.RestOfArray = restOfArray
-f.NumberOfCalls = numberOfCalls
+type PersonI struct {
+    Name       string
+    Age        int
+    BestFriend Person2
+}
+type PersonII struct {
+    Name string
+    Age  int
+}
+p := PersonI{}
+err := f.GenerateStruct(&Person1)
 ```
-To pass the input data from the fuzzer into a struct:
+
+If the consumer should insert values for unexported fields as well as exported, this can be enabled with:
+
 ```go
-ts := new(target_struct)
-err :=f.GenerateStruct(ts)
+f.AllowUnexportedFields()
 ```
-or:
+
+...and disabled with:
+
 ```go
-ts := target_struct{}
-err = f.GenerateStruct(&ts)
+f.AllowUnexportedFields()
 ```
-`GenerateStruct` will pass data from the input data to the targeted struct. Currently the following field types are supported:
-1. `string`
-2. `bool`
-3. `int`
-4. `[]string`
-5. `byte`
-5. `[]byte`
-6. custom structures
-7. `map`
+
+### Other types:
+
+The `Consumer` can creates basic types:
+
+```go
+err := f.GetString() // Gets random string
+err = f.GetInt() // Gets random integer
+err = f.GetByte() // Gets random byte
+err = f.GetBytes() // Gets random byte slice
+err = f.GetBool() // Gets random boolean
+err = f.FuzzMap(target_map) // Fills a map with values
+err = f.TarBytes() // Gets bytes of a valid tar archive
+```
+
+Most APIs are added as they are needed.
+
+ 
+
+## Status
+The project is under development and will be updated regularly.
+
+## References
+go-fuzz-headers' approach to fuzzing structs is strongly inspired by [gofuzz](https://github.com/google/gofuzz).
