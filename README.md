@@ -69,6 +69,7 @@ err = f.GetBytes() // Gets a byte slice
 err = f.GetBool() // Gets a boolean
 err = f.FuzzMap(target_map) // Fills a map
 err = f.TarBytes() // Gets bytes of a valid tar archive
+err = f.CreateFiles(inThisDir) // Fills inThisDir with files
 ```
 
 Most APIs are added as they are needed.

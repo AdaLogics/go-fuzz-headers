@@ -4,9 +4,12 @@ import (
 	"archive/tar"
 	"bytes"
 	"errors"
-	//"fmt"
+	"os"
 	"reflect"
+	"strings"
 	"unsafe"
+
+	securejoin "github.com/cyphar/filepath-securejoin"
 )
 
 type ConsumeFuzzer struct {
@@ -84,9 +87,6 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 	switch e.Kind() {
 	case reflect.Struct:
 		for i := 0; i < e.NumField(); i++ {
-			// Useful for debugging, so we leave it for now:
-			//vt := e.Type().Field(i).Name
-			//fmt.Println("vt:::::::::::::::::::::: ", vt)
 			var v reflect.Value
 			if !e.Field(i).CanSet() {
 				if f.fuzzUnexportedFields {
@@ -334,6 +334,105 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 	if err := tw.Close(); err != nil {
 		return nil, err
 	}
-	//fmt.Println(string(buf.Bytes()))
 	return buf.Bytes(), nil
+}
+
+// Creates pseudo-random files in rootDir.
+// Will create subdirs and place the files there.
+// It is the callers responsibility to ensure that
+// rootDir exists.
+func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
+
+	noOfCreatedFiles := 0
+	numberOfFiles, err := f.GetInt()
+	if err != nil {
+		return err
+	}
+	maxNumberOfFiles := numberOfFiles % 4000 // This is completely arbitrary
+	if maxNumberOfFiles == 0 {
+		return errors.New("maxNumberOfFiles is nil")
+	}
+
+	for i := 0; i < maxNumberOfFiles; i++ {
+		subDir, err := f.GetString()
+		if err != nil {
+			// We don't stop the fuzzing job if we have created
+			// some files. In that case we want to feed them
+			// to the target
+			if noOfCreatedFiles > 0 {
+				return nil
+			}
+		}
+
+		if strings.Contains(subDir, "../") || (len(subDir) > 0 && subDir[0] == 47) || strings.Contains(subDir, "\\") {
+			if noOfCreatedFiles > 0 {
+				return nil
+			} else {
+				return errors.New("Dir contains invalid chars")
+			}
+		}
+
+		dirPath, err := securejoin.SecureJoin(rootDir, subDir)
+		if err != nil {
+			if noOfCreatedFiles > 0 {
+				return nil
+			} else {
+				return errors.New("Could not join rootDir and subDir securely")
+			}
+		}
+		err = os.MkdirAll(dirPath, 0777)
+		if err != nil {
+			if noOfCreatedFiles > 0 {
+				return nil
+			} else {
+				return errors.New("Could not create the subDir")
+			}
+		}
+		fileName, err := f.GetString()
+		if err != nil {
+			if noOfCreatedFiles > 0 {
+				return nil
+			} else {
+				return errors.New("Could not get fileName")
+			}
+		}
+		fullFilePath, err := securejoin.SecureJoin(dirPath, fileName)
+		if err != nil {
+			if noOfCreatedFiles > 0 {
+				return nil
+			} else {
+				return errors.New("Could not join dir path and file path securely")
+			}
+		}
+		fileContents, err := f.GetBytes()
+		if err != nil {
+			if noOfCreatedFiles > 0 {
+				return nil
+			} else {
+				return errors.New("Could not create the subDir")
+			}
+		}
+
+		createdFile, err := os.Create(fullFilePath)
+		if err != nil {
+			createdFile.Close()
+			if noOfCreatedFiles > 0 {
+				return nil
+			} else {
+				return errors.New("Could not create the subDir")
+			}
+		}
+		_, err = createdFile.Write(fileContents)
+		if err != nil {
+			createdFile.Close()
+			if noOfCreatedFiles > 0 {
+				return nil
+			} else {
+				return errors.New("Could not create the subDir")
+			}
+		}
+		createdFile.Close()
+		noOfCreatedFiles++
+	}
+	return nil
 }
