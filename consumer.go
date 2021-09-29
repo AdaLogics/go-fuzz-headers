@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -435,4 +436,23 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 		noOfCreatedFiles++
 	}
 	return nil
+}
+
+// Returns a string that can only consists of characters that are
+// included in possibleChars. Will return an error if the created
+// string does not have the specified length
+func (f *ConsumeFuzzer) GetStringFrom(possibleChars string, length int) (string, error) {
+	returnString := ""
+	if (len(f.data)-f.position)<length {
+		return returnString, errors.New("Not enough bytes to create a string")
+	}
+	for i:=0;i<length;i++ {
+		charIndex, err := f.GetInt()
+		if err != nil {
+			return returnString, err
+		}
+		charToAdd := string(possibleChars[charIndex%len(possibleChars)])
+		returnString = fmt.Sprintf(returnString+charToAdd)
+	}
+	return returnString, nil
 }

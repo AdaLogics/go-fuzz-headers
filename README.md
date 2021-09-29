@@ -62,14 +62,15 @@ f.DisallowUnexportedFields()
 Other useful APIs:
 
 ```go
-err := f.GetString() // Gets a string
-err = f.GetInt() // Gets an integer
-err = f.GetByte() // Gets a byte
-err = f.GetBytes() // Gets a byte slice
-err = f.GetBool() // Gets a boolean
-err = f.FuzzMap(target_map) // Fills a map
-err = f.TarBytes() // Gets bytes of a valid tar archive
-err = f.CreateFiles(inThisDir) // Fills inThisDir with files
+createdString, err := f.GetString() // Gets a string
+createdInt, err := f.GetInt() // Gets an integer
+createdByte, err := f.GetByte() // Gets a byte
+createdBytes, err := f.GetBytes() // Gets a byte slice
+createdBool, err := f.GetBool() // Gets a boolean
+err := f.FuzzMap(target_map) // Fills a map
+createdTarBytes, err := f.TarBytes() // Gets bytes of a valid tar archive
+err := f.CreateFiles(inThisDir) // Fills inThisDir with files
+createdString, err := f.GetStringFrom("anyCharInThisString", ofThisLength) // Gets a string that consists of chars from "anyCharInThisString" and has the exact length "ofThisLength"
 ```
 
 Most APIs are added as they are needed.
