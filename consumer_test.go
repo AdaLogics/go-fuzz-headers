@@ -126,3 +126,25 @@ func TestFuzzMap2(t *testing.T) {
 		t.Errorf("m[\"Key2\"] should be \"Val2\" but should be")
 	}
 }
+
+func TestFuzzGetStringFrom(t *testing.T) {
+	data := []byte{0x61, 0x62, 0x63, 0x64, 0x65, 0x66} // "ABCDEF"
+	f := NewConsumer(data)
+	createdString, err := f.GetStringFrom("abcdefghijklmnopqrstuwxyz123456789-", 6)
+	if err != nil {
+		t.Errorf("Got an error here but shouldn't")
+	}
+	if createdString!="345678" {
+		t.Errorf("Created string should have been 345678")
+	}
+
+	data = []byte{0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x2d, 0x2e} // "GHIJKL-."
+	f2 := NewConsumer(data)
+	createdString, err = f2.GetStringFrom("abcdefghijklmnopqrstuwxyz123456789-", 8)
+	if err != nil {
+		t.Errorf("Got an error but shouldn't")
+	}
+	if createdString!="ijklmnkl" {
+		t.Errorf("Created string should have been ijklmnkl")
+	}
+}
