@@ -2,6 +2,7 @@ package gofuzzheaders
 
 import (
 	"fmt"
+	"strings"
 )
 
 // returns a keyword by index
@@ -276,7 +277,8 @@ var alter_table_options = []string{
 // in that it has its own function. The majority of statements
 // are created by 'createStmt()'.
 func createAlterTableStmt(f *ConsumeFuzzer) (string, error) {
-	stmt := "ALTER TABLE"
+	var stmt strings.Builder
+	stmt.WriteString("ALTER TABLE ")
 	maxArgs, err := f.GetInt()
 	if err != nil {
 		return "", err
@@ -296,16 +298,16 @@ func createAlterTableStmt(f *ConsumeFuzzer) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			stmt = fmt.Sprintf("%s %s", stmt, customString)
+			stmt.WriteString(fmt.Sprintf(" %s", customString))
 		} else {
 			tokenIndex, err := f.GetInt()
 			if err != nil {
 				return "", err
 			}
-			stmt = fmt.Sprintf("%s %s", stmt, alter_table_options[tokenIndex%len(alter_table_options)])
+			stmt.WriteString(fmt.Sprintf(" %s", alter_table_options[tokenIndex%len(alter_table_options)]))
 		}
 	}
-	return stmt, nil
+	return stmt.String(), nil
 }
 
 func chooseToken(tokens []string, f *ConsumeFuzzer) (string, error) {
@@ -313,8 +315,9 @@ func chooseToken(tokens []string, f *ConsumeFuzzer) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	token := tokens[index%len(tokens)]
-	if token == "CUSTOM_FUZZ_STRING" {
+	var token strings.Builder
+	token.WriteString(fmt.Sprintf(" %s", tokens[index%len(tokens)]))
+	if token.String() == "CUSTOM_FUZZ_STRING" {
 		customFuzzString, err := f.GetString()
 		if err != nil {
 			return "", err
@@ -323,16 +326,14 @@ func chooseToken(tokens []string, f *ConsumeFuzzer) (string, error) {
 	}
 
 	// Check if token requires an argument
-	if containsString(needCustomString, token) {
+	if containsString(needCustomString, token.String()) {
 		customFuzzString, err := f.GetString()
 		if err != nil {
 			return "", err
 		}
-		token := fmt.Sprintf("%s %s", token, customFuzzString)
-		return token, nil
+		token.WriteString(fmt.Sprintf(" %s", customFuzzString))
 	}
-	// What should we return here?
-	return token, nil
+	return token.String(), nil
 }
 
 var stmtTypes = map[string][][]string{
@@ -389,22 +390,23 @@ func createStmt(f *ConsumeFuzzer) (string, error) {
 	// queries, see "stmtTypes"
 
 	// First specify the first query keyword:
-	query := queryType
+	var query strings.Builder
+	query.WriteString(queryType)
 
 	// Next create the args for the
 	queryArgs, err := createStmtArgs(tokens, f)
 	if err != nil {
 		return "", err
 	}
-	query = fmt.Sprintf("%s %s", query, queryArgs)
-	return query, nil
+	query.WriteString(fmt.Sprintf(" %s", queryArgs))
+	return query.String(), nil
 }
 
 // Creates the arguments of a statements. In a select statement
 // that would be everything after "select".
 func createStmtArgs(tokenslice [][]string, f *ConsumeFuzzer) (string, error) {
-	query := ""
-	var token string
+	var query strings.Builder
+	var token strings.Builder
 
 	// We go through the tokens in the tokenslice,
 	// create the respective token and add it to
@@ -427,18 +429,18 @@ func createStmtArgs(tokenslice [][]string, f *ConsumeFuzzer) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			query = fmt.Sprintf("%s %s", query, chosenToken)
+			query.WriteString(fmt.Sprintf(" %s", chosenToken))
 		} else {
-			token = tokens[0]
+			token.WriteString(tokens[0])
 
 			// In case the token is "CUSTOM_FUZZ_STRING"
 			// we will then create a non-structured string
-			if token == "CUSTOM_FUZZ_STRING" {
+			if token.String() == "CUSTOM_FUZZ_STRING" {
 				customFuzzString, err := f.GetString()
 				if err != nil {
 					return "", err
 				}
-				query = fmt.Sprintf("%s %s", query, customFuzzString)
+				query.WriteString(fmt.Sprintf(" %s", customFuzzString))
 				continue
 			}
 
@@ -446,17 +448,17 @@ func createStmtArgs(tokenslice [][]string, f *ConsumeFuzzer) (string, error) {
 			// Tokens that take an argument can be found
 			// in 'needCustomString'. If so, we add a
 			// non-structured string to the token.
-			if containsString(needCustomString, token) {
+			if containsString(needCustomString, token.String()) {
 				customFuzzString, err := f.GetString()
 				if err != nil {
 					return "", err
 				}
-				token = fmt.Sprintf("%s %s", token, customFuzzString)
+				token.WriteString(fmt.Sprintf(" %s", customFuzzString))
 			}
-			query = fmt.Sprintf("%s %s", query, token)
+			query.WriteString(fmt.Sprintf(" %s", token.String()))
 		}
 	}
-	return query, nil
+	return query.String(), nil
 }
 
 // Creates a semi-structured query. It creates a string
@@ -470,7 +472,7 @@ func createQuery(f *ConsumeFuzzer) (string, error) {
 	if maxLen == 0 {
 		return "", fmt.Errorf("Could not create a query")
 	}
-	query := ""
+	var query strings.Builder
 	for i := 0; i < maxLen; i++ {
 		// Get a new token:
 		useKeyword, err := f.GetBool()
@@ -482,19 +484,19 @@ func createQuery(f *ConsumeFuzzer) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			query += fmt.Sprintf("%s %s", query, keyword)
+			query.WriteString(fmt.Sprintf(" %s", keyword))
 		} else {
 			customString, err := f.GetString()
 			if err != nil {
 				return "", err
 			}
-			query += fmt.Sprintf("%s %s", query, customString)
+			query.WriteString(fmt.Sprintf(" %s", customString))
 		}
 	}
-	if query == "" {
+	if query.String() == "" {
 		return "", fmt.Errorf("Could not create a query")
 	}
-	return query, nil
+	return query.String(), nil
 }
 
 // This is the API that users will interact with.
