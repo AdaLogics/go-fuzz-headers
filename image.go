@@ -11,13 +11,13 @@ import (
 	"os"
 	"time"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
-	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 )
 
 // uncompressedLayer implements partial.UncompressedLayer from raw bytes.
@@ -45,8 +45,8 @@ func (ul *uncompressedLayer) MediaType() (types.MediaType, error) {
 var _ partial.UncompressedLayer = (*uncompressedLayer)(nil)
 
 var layerTypes = []types.MediaType{types.DockerLayer, types.DockerUncompressedLayer,
-								   types.OCIRestrictedLayer, types.OCIUncompressedLayer,
-								   types.OCIUncompressedRestrictedLayer, types.OCILayer}
+	types.OCIRestrictedLayer, types.OCIUncompressedLayer,
+	types.OCIUncompressedRestrictedLayer, types.OCILayer}
 
 // Gets valid bytes for a container image in .tar format.
 // This is the API that users will interact with.
@@ -80,7 +80,7 @@ func (f *ConsumeFuzzer) GetImageBytes() ([]byte, error) {
 
 	// Write the bytes to a file
 	if err := tarball.WriteToFile(fp.Name(), tag, img); err != nil {
-		panic(err)
+		return []byte{}, err
 	}
 
 	// Read the bytes
@@ -91,7 +91,7 @@ func (f *ConsumeFuzzer) GetImageBytes() ([]byte, error) {
 	return fileData, nil
 }
 
-// createImage implements a helper that allows the fuzzer to create 
+// createImage implements a helper that allows the fuzzer to create
 // a container image
 func createImage(f *ConsumeFuzzer) (v1.Image, error) {
 	adds := make([]mutate.Addendum, 0, 5)
@@ -154,11 +154,11 @@ func createLayer(f *ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 	if err != nil {
 		return nil, err
 	}
-	noOfFiles = noOfFiles%50
-	if noOfFiles==0 {
+	noOfFiles = noOfFiles % 50
+	if noOfFiles == 0 {
 		return nil, fmt.Errorf("No files to be created")
 	}
-	for i:=0;i<noOfFiles;i++ {
+	for i := 0; i < noOfFiles; i++ {
 		// Write a single file with a random name and random contents.
 		fileName, err := f.GetString()
 		if err != nil {
