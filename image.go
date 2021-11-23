@@ -1,4 +1,4 @@
-package fuzz 
+package gofuzzheaders
 
 import (
 	"archive/tar"
@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"os"
 	"time"
-	//"unicode/utf8"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -19,8 +18,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
-
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 // uncompressedLayer implements partial.UncompressedLayer from raw bytes.
@@ -47,66 +44,67 @@ func (ul *uncompressedLayer) MediaType() (types.MediaType, error) {
 
 var _ partial.UncompressedLayer = (*uncompressedLayer)(nil)
 
-var counter = 0
-var counter2 = 0
+var layerTypes = []types.MediaType{types.DockerLayer, types.DockerUncompressedLayer,
+								   types.OCIRestrictedLayer, types.OCIUncompressedLayer,
+								   types.OCIUncompressedRestrictedLayer, types.OCILayer}
 
-func Fuzz(data []byte) int {
-	//fmt.Println(counter)
-	f := fuzz.NewConsumer(data)
-	img, err := Image(f)
+// Gets valid bytes for a container image in .tar format.
+// This is the API that users will interact with.
+// Usage:
+// f := NewConsumer(data)
+// imagebytes, err := f.GetImageBytes()
+func (f *ConsumeFuzzer) GetImageBytes() ([]byte, error) {
+	img, err := createImage(f)
 	if err != nil {
-		return 0
+		return []byte{}, err
 	}
-	counter++
-	/*if counter<5000 {
-		return 1
-	}*/
 	runes := "abcdefghijklmnopqrstuvwxyz0123456789_-.ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 	tagNameString, err := f.GetStringFrom(runes, 126)
-	/*if utf8.RuneCountInString(tagNameString)!=0 {
-		fmt.Println(utf8.RuneCountInString(tagNameString))
-		panic(tagNameString)
-	}*/
 	if err != nil {
-		return 0
+		return []byte{}, err
 	}
-	//fmt.Printf("%+v\n", img)
-	/*if counter!=200 {
-		defer os.Remove(fp.Name())
-	}*/
 	tag, err := name.NewTag(tagNameString)
 	if err != nil {
-		return 0
+		return []byte{}, err
 	}
 
+	// Create the tar file to write the bytes to
+	// Todo: Remove this and write to a buffer instead
 	fp, err := os.Create("tarball")
 	if err != nil {
 		panic(err)
 	}
 	defer fp.Close()
 	defer os.Remove(fp.Name())
+
+	// Write the bytes to a file
 	if err := tarball.WriteToFile(fp.Name(), tag, img); err != nil {
 		panic(err)
 	}
-	fmt.Println("Wrote to ", fp.Name(), "counter2: ", counter2)
+
+	// Read the bytes
 	fileData, err := os.ReadFile("tarball")
 	if err != nil {
-		return 0
+		return []byte{}, err
 	}
-	os.Stdout.Write(fileData)
-
-	counter2++
-	return 1
+	return fileData, nil
 }
 
-func Image(f *fuzz.ConsumeFuzzer) (v1.Image, error) {
+// createImage implements a helper that allows the fuzzer to create 
+// a container image
+func createImage(f *ConsumeFuzzer) (v1.Image, error) {
 	adds := make([]mutate.Addendum, 0, 5)
 	noOfLayers, err := f.GetInt()
 	if err != nil {
 		return nil, err
 	}
 	for i := 0; i < noOfLayers; i++ {
-		layer, err := Layer(f, types.DockerLayer)
+		layerType, err := getLayerType(f)
+		if err != nil {
+			return nil, err
+		}
+		layer, err := createLayer(f, layerType)
 		if err != nil {
 			return nil, err
 		}
@@ -136,10 +134,16 @@ func Image(f *fuzz.ConsumeFuzzer) (v1.Image, error) {
 	return mutate.Append(empty.Image, adds...)
 }
 
-// Layer returns a layer with pseudo-randomly generated content.
-func Layer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
-	//fileName := fmt.Sprintf("random_file_%d.txt", mrand.Int())
+func getLayerType(f *ConsumeFuzzer) (types.MediaType, error) {
+	layerIndex, err := f.GetInt()
+	if err != nil {
+		return types.OCILayer, err
+	}
+	return layerTypes[layerIndex%len(layerTypes)], nil
+}
 
+// createLayer returns a layer with pseudo-randomly generated content.
+func createLayer(f *ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 	// Hash the contents as we write it out to the buffer.
 	var b bytes.Buffer
 	hasher := sha256.New()
@@ -150,10 +154,11 @@ func Layer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 	if err != nil {
 		return nil, err
 	}
-	if noOfFiles%50==0 {
+	noOfFiles = noOfFiles%50
+	if noOfFiles==0 {
 		return nil, fmt.Errorf("No files to be created")
 	}
-	for i:=0;i<noOfFiles%50;i++ {
+	for i:=0;i<noOfFiles;i++ {
 		// Write a single file with a random name and random contents.
 		fileName, err := f.GetString()
 		if err != nil {
