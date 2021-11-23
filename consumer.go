@@ -365,6 +365,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			}
 		}
 
+		// Avoid going outside the root dir
 		if strings.Contains(subDir, "../") || (len(subDir) > 0 && subDir[0] == 47) || strings.Contains(subDir, "\\") {
 			if noOfCreatedFiles > 0 {
 				return nil
