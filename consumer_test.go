@@ -1,7 +1,6 @@
 package gofuzzheaders
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -118,7 +117,7 @@ func TestFuzzMap2(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	fmt.Printf("%+v\n", m)
+	
 	if string(m["Key1"])!="Val1" {
 		t.Errorf("m[\"Key1\"] should be \"Val1\" but should be")
 	}
