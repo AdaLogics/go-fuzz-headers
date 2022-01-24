@@ -241,7 +241,7 @@ func (f *ConsumeFuzzer) GetByte() (byte, error) {
 }
 
 func (f *ConsumeFuzzer) GetNBytes(numberOfBytes int) ([]byte, error) {
-	returnBytes := make([]byte, numberOfBytes)
+	returnBytes := make([]byte, 0)
 	if len(f.data) == 0 {
 		return returnBytes, errors.New("Not enough bytes to get byte")
 	}

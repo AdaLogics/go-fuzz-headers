@@ -1,6 +1,7 @@
 package gofuzzheaders
 
 import (
+	//"fmt"
 	"testing"
 )
 
@@ -146,4 +147,27 @@ func TestFuzzGetStringFrom(t *testing.T) {
 	if createdString!="ijklmnkl" {
 		t.Errorf("Created string should have been ijklmnkl")
 	}
+}
+
+func TestUint16(t *testing.T) {
+	data := []byte{0x6F, 0x7F, 0x12} // "l2"
+	fuzz1 := NewConsumer(data)
+	u16, err := fuzz1.GetUint16()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if u16!=32623 {
+		t.Errorf("the u16 should be 32623")
+	}
+
+	data = []byte{0x6F, 0x7F, 0x11} // "l2"
+	fuzz2 := NewConsumer(data)
+	u16, err = fuzz2.GetUint16()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if u16!=28543 {
+		t.Errorf("the u16 should be 28543")
+	}
+
 }
