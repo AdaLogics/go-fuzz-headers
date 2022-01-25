@@ -248,7 +248,7 @@ func (f *ConsumeFuzzer) GetNBytes(numberOfBytes int) ([]byte, error) {
 	if f.position >= len(f.data) {
 		return returnBytes, errors.New("Not enough bytes to get byte")
 	}
-	for i:=0;i<numberOfBytes;i++ {
+	for i := 0; i < numberOfBytes; i++ {
 		newByte, err := f.GetByte()
 		if err != nil {
 			return returnBytes, err
@@ -308,9 +308,6 @@ func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
 	u64BE := binary.BigEndian.Uint64(u64)
 	return u64BE, nil
 }
-
-
-
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if len(f.data) == 0 || f.position >= len(f.data) {
@@ -517,16 +514,24 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 // string does not have the specified length
 func (f *ConsumeFuzzer) GetStringFrom(possibleChars string, length int) (string, error) {
 	returnString := ""
-	if (len(f.data)-f.position)<length {
+	if (len(f.data) - f.position) < length {
 		return returnString, errors.New("Not enough bytes to create a string")
 	}
-	for i:=0;i<length;i++ {
+	for i := 0; i < length; i++ {
 		charIndex, err := f.GetInt()
 		if err != nil {
 			return returnString, err
 		}
 		charToAdd := string(possibleChars[charIndex%len(possibleChars)])
-		returnString = fmt.Sprintf(returnString+charToAdd)
+		returnString = fmt.Sprintf(returnString + charToAdd)
 	}
 	return returnString, nil
+}
+
+func (f *ConsumeFuzzer) GetRune() ([]rune, error) {
+	stringToConvert, err := f.GetString()
+	if err != nil {
+		return []rune("nil"), err
+	}
+	return []rune(stringToConvert), nil
 }
