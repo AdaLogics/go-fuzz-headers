@@ -150,7 +150,7 @@ func TestFuzzGetStringFrom(t *testing.T) {
 }
 
 func TestUint16(t *testing.T) {
-	data := []byte{0x6F, 0x7F, 0x12} // "l2"
+	data := []byte{0x6F, 0x7F, 0x12}
 	fuzz1 := NewConsumer(data)
 	u16, err := fuzz1.GetUint16()
 	if err != nil {
@@ -160,7 +160,7 @@ func TestUint16(t *testing.T) {
 		t.Errorf("the u16 should be 32623")
 	}
 
-	data = []byte{0x6F, 0x7F, 0x11} // "l2"
+	data = []byte{0x6F, 0x7F, 0x11}
 	fuzz2 := NewConsumer(data)
 	u16, err = fuzz2.GetUint16()
 	if err != nil {
