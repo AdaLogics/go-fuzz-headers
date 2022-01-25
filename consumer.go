@@ -3,6 +3,7 @@ package gofuzzheaders
 import (
 	"archive/tar"
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
@@ -238,6 +239,78 @@ func (f *ConsumeFuzzer) GetByte() (byte, error) {
 	f.position += 1
 	return returnByte, nil
 }
+
+func (f *ConsumeFuzzer) GetNBytes(numberOfBytes int) ([]byte, error) {
+	returnBytes := make([]byte, 0)
+	if len(f.data) == 0 {
+		return returnBytes, errors.New("Not enough bytes to get byte")
+	}
+	if f.position >= len(f.data) {
+		return returnBytes, errors.New("Not enough bytes to get byte")
+	}
+	for i:=0;i<numberOfBytes;i++ {
+		newByte, err := f.GetByte()
+		if err != nil {
+			return returnBytes, err
+		}
+		returnBytes = append(returnBytes, newByte)
+	}
+	return returnBytes, nil
+}
+
+func (f *ConsumeFuzzer) GetUint16() (uint16, error) {
+	u16, err := f.GetNBytes(2)
+	if err != nil {
+		return uint16(0), err
+	}
+	littleEndian, err := f.GetBool()
+	if err != nil {
+		return uint16(0), err
+	}
+	if littleEndian {
+		u16LE := binary.LittleEndian.Uint16(u16)
+		return u16LE, nil
+	}
+	u16BE := binary.BigEndian.Uint16(u16)
+	return u16BE, nil
+}
+
+func (f *ConsumeFuzzer) GetUint32() (uint32, error) {
+	u32, err := f.GetNBytes(4)
+	if err != nil {
+		return uint32(0), err
+	}
+	littleEndian, err := f.GetBool()
+	if err != nil {
+		return uint32(0), err
+	}
+	if littleEndian {
+		u32LE := binary.LittleEndian.Uint32(u32)
+		return u32LE, nil
+	}
+	u32BE := binary.BigEndian.Uint32(u32)
+	return u32BE, nil
+}
+
+func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
+	u64, err := f.GetNBytes(8)
+	if err != nil {
+		return uint64(0), err
+	}
+	littleEndian, err := f.GetBool()
+	if err != nil {
+		return uint64(0), err
+	}
+	if littleEndian {
+		u64LE := binary.LittleEndian.Uint64(u64)
+		return u64LE, nil
+	}
+	u64BE := binary.BigEndian.Uint64(u64)
+	return u64BE, nil
+}
+
+
+
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if len(f.data) == 0 || f.position >= len(f.data) {
