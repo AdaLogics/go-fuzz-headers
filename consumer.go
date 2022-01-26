@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"reflect"
 	"strings"
@@ -535,3 +536,38 @@ func (f *ConsumeFuzzer) GetRune() ([]rune, error) {
 	}
 	return []rune(stringToConvert), nil
 }
+
+func (f *ConsumeFuzzer) GetFloat32() (float32, error) {
+	u32, err := f.GetNBytes(4)
+	if err != nil {
+		return float32(0.0), err
+	}
+	littleEndian, err := f.GetBool()
+	if err != nil {
+		return float32(0.0), err
+	}
+	if littleEndian {
+		u32LE := binary.LittleEndian.Uint32(u32)
+		return math.Float32frombits(u32LE), nil
+	}
+	u32BE := binary.BigEndian.Uint32(u32)
+	return math.Float32frombits(u32BE), nil
+}
+
+func (f *ConsumeFuzzer) GetFloat64() (float64, error) {
+	u64, err := f.GetNBytes(8)
+	if err != nil {
+		return float64(0.0), err
+	}
+	littleEndian, err := f.GetBool()
+	if err != nil {
+		return float64(0.0), err
+	}
+	if littleEndian {
+		u64LE := binary.LittleEndian.Uint64(u64)
+		return math.Float64frombits(u64LE), nil
+	}
+	u64BE := binary.BigEndian.Uint64(u64)
+	return math.Float64frombits(u64BE), nil
+}
+
