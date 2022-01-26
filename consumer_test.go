@@ -1,7 +1,7 @@
 package gofuzzheaders
 
 import (
-	"fmt"
+	//"fmt"
 	"testing"
 )
 
@@ -179,8 +179,32 @@ func TestGetRune(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	fmt.Println(newRune)
 	if string(newRune) != "ABC" {
 		t.Errorf("'newRune' should be 'ABC', but is something else")
+	}
+}
+
+func TestGetFloat32(t *testing.T) {
+	data := []byte{0x3, 0x41, 0x42, 0x43, 0x44}
+	fuzz1 := NewConsumer(data)
+	newFloat, err := fuzz1.GetFloat32()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if newFloat != 194.25395 {
+		t.Errorf("'newFloat' should be '%f', but is %f\n", 194.25395, newFloat)
+	}
+}
+
+func TestGetFloat64(t *testing.T) {
+	data := []byte{0x3, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48}
+	fuzz1 := NewConsumer(data)
+	newFloat, err := fuzz1.GetFloat64()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	expectedFloat := 2.3127085096212183e+35
+	if newFloat != expectedFloat {
+		t.Errorf("'newFloat' should be '%f', but is %f\n", expectedFloat, newFloat)
 	}
 }
