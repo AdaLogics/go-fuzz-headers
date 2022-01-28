@@ -602,3 +602,11 @@ func (f *ConsumeFuzzer) GetFloat64() (float64, error) {
 	u64BE := binary.BigEndian.Uint64(u64)
 	return math.Float64frombits(u64BE), nil
 }
+
+func (f *ConsumeFuzzer) CreateSlice(targetSlice interface{}) error {
+	err := f.GenerateStruct(targetSlice)
+	if err != nil {
+		return err
+	}
+	return nil
+}
