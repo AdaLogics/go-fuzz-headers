@@ -232,3 +232,17 @@ func TestStructWithFloats(t *testing.T) {
 		t.Errorf("'ds' should be '%f', but is %f\n", expectedStruct, ds)
 	}
 }
+
+func TestCreateSlice(t *testing.T) {
+	data := []byte{0x3, 0x1, 0x41, 0x3, 0x42, 0x43, 0x44, 0x2, 0x45, 0x46}
+	fuzz1 := NewConsumer(data)
+	var targetSlice []string
+	err := fuzz1.CreateSlice(&targetSlice)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	expectedSlice := []string{"A", "BCD", "EF"}
+	if !reflect.DeepEqual(targetSlice, expectedSlice) {
+		t.Errorf("target slice should be '%v', but is %v\n", expectedSlice, targetSlice)
+	}
+}
