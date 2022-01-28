@@ -2,6 +2,7 @@ package gofuzzheaders
 
 import (
 	//"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -206,5 +207,28 @@ func TestGetFloat64(t *testing.T) {
 	expectedFloat := 2.3127085096212183e+35
 	if newFloat != expectedFloat {
 		t.Errorf("'newFloat' should be '%f', but is %f\n", expectedFloat, newFloat)
+	}
+}
+
+type DemoStructWithFloats struct {
+	//field1 float32
+	Field1 float32
+	Field2 float64
+}
+
+func TestStructWithFloats(t *testing.T) {
+	data := []byte{0x3, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x50, 0x51, 0x52, 0x53}
+	fuzz1 := NewConsumer(data)
+	ds := &DemoStructWithFloats{}
+	err := fuzz1.GenerateStruct(ds)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	expectedStruct := &DemoStructWithFloats{
+		Field1: 194.25395,
+		Field2: 5.386597900038134e+25,
+	}
+	if !reflect.DeepEqual(ds, expectedStruct) {
+		t.Errorf("'ds' should be '%f', but is %f\n", expectedStruct, ds)
 	}
 }

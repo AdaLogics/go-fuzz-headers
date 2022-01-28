@@ -130,6 +130,22 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		if e.CanSet() {
 			e.Set(uu)
 		}
+	case reflect.Uint16:
+		newInt, err := f.GetUint16()
+		if err != nil {
+			return err
+		}
+		if e.CanSet() {
+			e.SetUint(uint64(newInt))
+		}
+	case reflect.Uint32:
+		newInt, err := f.GetUint32()
+		if err != nil {
+			return err
+		}
+		if e.CanSet() {
+			e.SetUint(uint64(newInt))
+		}
 	case reflect.Uint64:
 		newInt, err := f.GetInt()
 		if err != nil {
@@ -138,13 +154,29 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		if e.CanSet() {
 			e.SetUint(uint64(newInt))
 		}
-	case reflect.Int:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		newInt, err := f.GetInt()
 		if err != nil {
 			return err
 		}
 		if e.CanSet() {
 			e.SetInt(int64(newInt))
+		}
+	case reflect.Float32:
+		newFloat, err := f.GetFloat32()
+		if err != nil {
+			return err
+		}
+		if e.CanSet() {
+			e.SetFloat(float64(newFloat))
+		}
+	case reflect.Float64:
+		newFloat, err := f.GetFloat64()
+		if err != nil {
+			return err
+		}
+		if e.CanSet() {
+			e.SetFloat(float64(newFloat))
 		}
 	case reflect.Map:
 		if e.CanSet() {
@@ -570,4 +602,3 @@ func (f *ConsumeFuzzer) GetFloat64() (float64, error) {
 	u64BE := binary.BigEndian.Uint64(u64)
 	return math.Float64frombits(u64BE), nil
 }
-
