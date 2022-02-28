@@ -22,6 +22,7 @@ type ConsumeFuzzer struct {
 	NumberOfCalls        int
 	position             int
 	fuzzUnexportedFields bool
+	Funcs                map[reflect.Type]reflect.Value
 }
 
 func IsDivisibleBy(n int, divisibleby int) bool {
@@ -29,7 +30,8 @@ func IsDivisibleBy(n int, divisibleby int) bool {
 }
 
 func NewConsumer(fuzzData []byte) *ConsumeFuzzer {
-	f := &ConsumeFuzzer{data: fuzzData, position: 0}
+	fuzzMap := make(map[reflect.Type]reflect.Value)
+	f := &ConsumeFuzzer{data: fuzzData, position: 0, Funcs: fuzzMap}
 	return f
 }
 
@@ -79,14 +81,59 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 		return errors.New("This interface cannot be set")
 	}*/
 	e := v.Elem()
-	err := f.fuzzStruct(e)
+	err := f.fuzzStruct(e, false)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
+func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
+	// First: see if we have a fuzz function for it.
+	doCustom, ok := f.Funcs[v.Type()]
+	if !ok {
+		return fmt.Errorf("Could not find a custom function")
+	}
+
+	switch v.Kind() {
+	case reflect.Ptr:
+		if v.IsNil() {
+			if !v.CanSet() {
+				return fmt.Errorf("Could not use a custom function")
+			}
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+	case reflect.Map:
+		if v.IsNil() {
+			if !v.CanSet() {
+				return fmt.Errorf("Could not use a custom function")
+			}
+			v.Set(reflect.MakeMap(v.Type()))
+		}
+	default:
+		return fmt.Errorf("Could not use a custom function")
+	}
+
+	verr := doCustom.Call([]reflect.Value{v, reflect.ValueOf(Continue{
+		f: f,
+	})})
+	// check if we return an error
+	if verr[0].IsNil() {
+		return nil
+	}
+	return fmt.Errorf("Could not use a custom function")
+}
+
+func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error {
+
+	// We check if we should check for custom functions
+	if customFunctions {
+		_, ok := f.Funcs[e.Type()]
+		if ok {
+			return f.setCustom(e)
+		}
+	}
+
 	switch e.Kind() {
 	case reflect.Struct:
 		for i := 0; i < e.NumField(); i++ {
@@ -98,7 +145,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			} else {
 				v = e.Field(i)
 			}
-			err := f.fuzzStruct(v)
+			err := f.fuzzStruct(v, customFunctions)
 			if err != nil {
 				return err
 			}
@@ -122,7 +169,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 		uu := reflect.MakeSlice(e.Type(), numOfElements, numOfElements)
 
 		for i := 0; i < numOfElements; i++ {
-			err := f.fuzzStruct(uu.Index(i))
+			err := f.fuzzStruct(uu.Index(i), customFunctions)
 			if err != nil {
 				return err
 			}
@@ -189,12 +236,12 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 			numOfElements := randQty % maxElements
 			for i := 0; i < numOfElements; i++ {
 				key := reflect.New(e.Type().Key()).Elem()
-				err := f.fuzzStruct(key)
+				err := f.fuzzStruct(key, customFunctions)
 				if err != nil {
 					return err
 				}
 				val := reflect.New(e.Type().Elem()).Elem()
-				err = f.fuzzStruct(val)
+				err = f.fuzzStruct(val, customFunctions)
 				if err != nil {
 					return err
 				}
@@ -204,7 +251,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value) error {
 	case reflect.Ptr:
 		if e.CanSet() {
 			e.Set(reflect.New(e.Type().Elem()))
-			err := f.fuzzStruct(e.Elem())
+			err := f.fuzzStruct(e.Elem(), customFunctions)
 			if err != nil {
 				return err
 			}
