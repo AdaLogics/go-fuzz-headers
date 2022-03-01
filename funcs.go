@@ -6,7 +6,7 @@ import (
 )
 
 type Continue struct {
-	f *ConsumeFuzzer
+	F *ConsumeFuzzer
 }
 
 func (f *ConsumeFuzzer) AddFuncs(fuzzFuncs []interface{}) {
@@ -38,4 +38,20 @@ func (f *ConsumeFuzzer) GenerateWithCustom(targetStruct interface{}) error {
 	v := reflect.ValueOf(targetStruct)
 	e := v.Elem()
 	return f.fuzzStruct(e, true)
+}
+
+func (c Continue) GenerateStruct(targetStruct interface{}) error {
+	err := c.F.GenerateStruct(targetStruct)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c Continue) GenerateStructWithCustom(targetStruct interface{}) error {
+	err := c.F.GenerateWithCustom(targetStruct)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -115,7 +115,7 @@ func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
 	}
 
 	verr := doCustom.Call([]reflect.Value{v, reflect.ValueOf(Continue{
-		f: f,
+		F: f,
 	})})
 	// check if we return an error
 	if verr[0].IsNil() {
@@ -128,9 +128,23 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 
 	// We check if we should check for custom functions
 	if customFunctions {
-		_, ok := f.Funcs[e.Type()]
-		if ok {
-			return f.setCustom(e)
+		if e.IsValid() {
+			if e.CanAddr() {
+				err := f.setCustom(e.Addr())
+				if err == nil {
+					return nil
+				}
+			}
+			/*	return f.setCustom(e)
+				_, ok := f.Funcs[e.Type()]
+				if ok {
+					if e.CanAddr() {
+						err := f.setCustom(e.Addr())
+						if err == nil {
+							return nil
+						}
+					}*/
+			//return f.setCustom(e)
 		}
 	}
 
@@ -142,12 +156,24 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 				if f.fuzzUnexportedFields {
 					v = reflect.NewAt(e.Field(i).Type(), unsafe.Pointer(e.Field(i).UnsafeAddr())).Elem()
 				}
+				err := f.fuzzStruct(v, customFunctions)
+				if err != nil {
+					return err
+				}
 			} else {
+				/*if e.Field(i).Kind() == reflect.Struct {
+					//e = reflect.NewAt(e.Type(), unsafe.Pointer(e.UnsafeAddr())).Elem()
+					//e.Field(i).Set(reflect.New(e.Field(i).Type()))
+				}*/
 				v = e.Field(i)
-			}
-			err := f.fuzzStruct(v, customFunctions)
-			if err != nil {
-				return err
+				//v = reflect.New(e.Field(i).Type())
+				err := f.fuzzStruct(v, customFunctions)
+				if err != nil {
+					return err
+				}
+				/*if e.Field(i).CanSet() {
+					e.Field(i).Set(v.Elem())
+				}*/
 			}
 		}
 	case reflect.String:

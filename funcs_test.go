@@ -52,7 +52,7 @@ func TestStruct_fuzzing_CustomFuncs1(t *testing.T) {
 func testFuncs() []interface{} {
 	return []interface{}{
 		func(j *TestStructFuncs4, c Continue) error {
-			newString, err := c.f.GetString()
+			newString, err := c.F.GetString()
 			if err != nil {
 				return err
 			}
