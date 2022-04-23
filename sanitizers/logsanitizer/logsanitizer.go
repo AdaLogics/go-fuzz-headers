@@ -128,8 +128,7 @@ func hasInsecureLogRUs(line string) bool {
 func createErr(line string) string {
 	var b strings.Builder
 	b.WriteString("Insecure string found in the logs.\n")
-	b.WriteString(fmt.Sprintf("The following line was found to be insecure: \n %s \n", line))
-	b.WriteString("The line was added in the fuzzer as an insecure string. \n")
-	b.WriteString("This means that an attacker might be able to tamper with the logs to cover up their tracks.")
+	b.WriteString(fmt.Sprintf("The following line was found to be insecure: \n\n %s \n", line))
+	b.WriteString("This means that an attacker might be able to add lines to the log that seem innocent as a means to hide their tracks.")
 	return b.String()
 }
