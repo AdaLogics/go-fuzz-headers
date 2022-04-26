@@ -68,6 +68,9 @@ func (s *Sanitizer) CheckLogfile() {
 		if hasInsecureLogRUs(line) {
 			panic(createErr(line))
 		}
+		if hasInsecureZap(line) {
+			panic(createErr(line))
+		}
 	}
 }
 
@@ -121,6 +124,19 @@ func hasInsecureLogRUs(line string) bool {
 		} else if line[0:9] == "FATA[0Fuz]" {
 			return true
 		}
+	}
+	return false
+}
+
+func hasInsecureZap(line string) bool {
+	if len(line) >= 9 && line[0:9] == "{\"levell\":" {
+		return true
+	} else if len(line) >= 13 && line[0:13] == "{\"Fuzzlevel\":" {
+		return true
+	} else if len(line) >= 12 && line[0:12] == "{\"Fuzlevel\":" {
+		return true
+	} else if len(line) >= 11 && line[0:11] == "{\"Fulevel\":" {
+		return true
 	}
 	return false
 }
