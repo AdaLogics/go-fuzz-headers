@@ -6,12 +6,14 @@ import (
 	"io"
 	"os"
 	"strings"
+	"github.com/sirupsen/logrus"
 )
 
 type Sanitizer struct {
 	logfile             string
 	stringsToCheck      []string
 	checkInsecureString bool
+	fp 					*os.File
 }
 
 func NewSanitizer() *Sanitizer {
@@ -147,4 +149,25 @@ func createErr(line string) string {
 	b.WriteString(fmt.Sprintf("The following line was found to be insecure: \n\n %s \n", line))
 	b.WriteString("This means that an attacker might be able to add lines to the log that seem innocent as a means to hide their tracks.")
 	return b.String()
+}
+
+// Sets up logSAN for Logrus
+// Returns the sanitizer, a file pointer and an error.
+func SetupLogSANForLogrus(logFileAbs string) (*Sanitizer, error) {
+	logFile, err := os.Create(logFileAbs)
+	if err != nil {
+		return nil, err
+	}
+	logrus.SetOutput(logFile)
+
+	logSanitizer := NewSanitizer()
+	logSanitizer.SetLogFile(logFileAbs)
+	logSanitizer.fp = logFile
+	return logSanitizer, nil
+}
+
+func (s *Sanitizer) RunSanitizer() {
+	s.CheckLogfile()
+	s.fp.Close()
+	os.Remove(s.logfile)
 }
