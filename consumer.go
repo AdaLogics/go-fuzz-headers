@@ -30,6 +30,10 @@ func IsDivisibleBy(n int, divisibleby int) bool {
 	return (n % divisibleby) == 0
 }
 
+func (f *ConsumeFuzzer) BytesLeft() int {
+	return len(f.RestOfArray)
+}
+
 func NewConsumer(fuzzData []byte) *ConsumeFuzzer {
 	fuzzMap := make(map[reflect.Type]reflect.Value)
 	f := &ConsumeFuzzer{data: fuzzData, position: 0, Funcs: fuzzMap}
@@ -520,6 +524,9 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 // It is the callers responsibility to ensure that
 // rootDir exists.
 func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
+	if f.BytesLeft() < 15 {
+		return errors.New("Not enough bytes for this API")
+	}
 	var noOfCreatedFiles int
 	noOfCreatedFiles = 0
 	numberOfFiles, err := f.GetInt()
@@ -587,6 +594,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				}
 				os.Symlink(symlinkTarget, fullFilePath)
 				// stop loop here, since a symlink needs no further action
+				fmt.Println("Created a symlink")
 				noOfCreatedFiles++
 				continue
 			}
@@ -612,6 +620,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				continue
 			}
 			createdFile.Close()
+			fmt.Println("Created a file")
 			noOfCreatedFiles++
 		}
 	}
