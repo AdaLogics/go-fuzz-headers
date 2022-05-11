@@ -568,10 +568,10 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				continue
 			}
 			if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-			    err2 := os.MkdirAll(dirPath, 0777)
-			    if err2 != nil {
-			    	continue
-			    }
+				err2 := os.MkdirAll(dirPath, 0777)
+				if err2 != nil {
+					continue
+				}
 			}
 			fullFilePath, err = securejoin.SecureJoin(dirPath, fileName)
 			if err != nil {
@@ -620,7 +620,6 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			noOfCreatedFiles++
 		}
 	}
-	fmt.Println("Created ", noOfCreatedFiles, "files")
 	return nil
 }
 
