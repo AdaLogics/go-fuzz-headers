@@ -2,6 +2,8 @@ package gofuzzheaders
 
 import (
 	//"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -244,5 +246,31 @@ func TestCreateSlice(t *testing.T) {
 	expectedSlice := []string{"A", "BCD", "EF"}
 	if !reflect.DeepEqual(targetSlice, expectedSlice) {
 		t.Errorf("target slice should be '%v', but is %v\n", expectedSlice, targetSlice)
+	}
+}
+
+
+func TestCreateFiles(t *testing.T) {
+	data := []byte{0x1, 0x1, 0x41, 0x3, 0x3, 0x42, 0x43, 0x44, 0x45}
+	fuzz1 := NewConsumer(data)
+	_ = fuzz1
+	dir := "fuzz"
+	err := os.Mkdir(dir, 0777)
+    if err != nil {
+            t.Fatal(err)
+    }
+    defer os.RemoveAll(dir)
+    err = fuzz1.CreateFiles(dir)
+    if err != nil {
+    	t.Fatal(err)
+    }
+
+    d, err := os.ReadFile(filepath.Join(dir, "A"))
+    if err != nil {
+    	t.Fatal(err)
+    }
+
+	if !reflect.DeepEqual(d, []byte{0x42, 0x43, 0x44}) {
+		t.Fatalf("Wrong read byteslice. Was %+v\n", d)
 	}
 }
