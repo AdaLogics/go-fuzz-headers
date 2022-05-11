@@ -31,7 +31,7 @@ func IsDivisibleBy(n int, divisibleby int) bool {
 }
 
 func (f *ConsumeFuzzer) BytesLeft() int {
-	return len(f.RestOfArray)
+	return len(f.data) - f.position
 }
 
 func NewConsumer(fuzzData []byte) *ConsumeFuzzer {
@@ -525,6 +525,7 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 // rootDir exists.
 func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 	if f.BytesLeft() < 15 {
+		fmt.Println("Only ", f.BytesLeft(), "bytes left")
 		return errors.New("Not enough bytes for this API")
 	}
 	var noOfCreatedFiles int
