@@ -537,7 +537,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			if noOfCreatedFiles > 0 {
 				// If files have been created, we don't return
 				// an error
-				return nil
+				break
 			} else {
 				return errors.New("Could not get fileName")
 			}
@@ -574,7 +574,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			createSymlink, err := f.GetBool()
 			if err != nil {
 				if noOfCreatedFiles > 0 {
-				return nil
+					break
 				} else {
 					return errors.New("Could not create the subDir")
 				}
@@ -586,6 +586,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				}
 				os.Symlink(symlinkTarget, fullFilePath)
 				// stop loop here, since a symlink needs no further action
+				noOfCreatedFiles++
 				continue
 			}
 
@@ -593,7 +594,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			fileContents, err := f.GetBytes()
 			if err != nil {
 				if noOfCreatedFiles > 0 {
-					return nil
+					break
 				} else {
 					return errors.New("Could not create the subDir")
 				}
@@ -610,8 +611,10 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				continue
 			}
 			createdFile.Close()
+			noOfCreatedFiles++
 		}
 	}
+	fmt.Println("Created ", noOfCreatedFiles, "of files")
 	return nil
 }
 
