@@ -520,7 +520,8 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 // It is the callers responsibility to ensure that
 // rootDir exists.
 func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
-	noOfCreatedFiles := 0
+	var noOfCreatedFiles int
+	noOfCreatedFiles = 0
 	numberOfFiles, err := f.GetInt()
 	if err != nil {
 		return err
