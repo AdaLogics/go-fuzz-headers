@@ -524,10 +524,6 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 // It is the callers responsibility to ensure that
 // rootDir exists.
 func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
-	if f.BytesLeft() < 15 {
-		fmt.Println("Only ", f.BytesLeft(), "bytes left")
-		return errors.New("Not enough bytes for this API")
-	}
 	var noOfCreatedFiles int
 	noOfCreatedFiles = 0
 	numberOfFiles, err := f.GetInt()
@@ -552,11 +548,14 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			}
 		}
 		var fullFilePath string
-		fullFilePath = fileName
+		fullFilePath, err = securejoin.SecureJoin(rootDir, fileName)
+		if err != nil {
+			return err
+		}
 
 		// Find the subdirectory of the file
 		subDir := filepath.Dir(fileName)
-		if subDir != "" {
+		if subDir != "" && subDir != "." {
 			// create the dir first
 
 			// Avoid going outside the root dir
@@ -585,7 +584,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				if noOfCreatedFiles > 0 {
 					break
 				} else {
-					return errors.New("Could not create the subDir")
+					return errors.New("Could not create the symlink")
 				}
 			}
 			if createSymlink {
@@ -595,21 +594,18 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				}
 				os.Symlink(symlinkTarget, fullFilePath)
 				// stop loop here, since a symlink needs no further action
-				fmt.Println("Created a symlink")
 				noOfCreatedFiles++
 				continue
 			}
-
 			// We create a normal file
 			fileContents, err := f.GetBytes()
 			if err != nil {
 				if noOfCreatedFiles > 0 {
 					break
 				} else {
-					return errors.New("Could not create the subDir")
+					return errors.New("Could not create the file")
 				}
 			}
-
 			createdFile, err := os.Create(fullFilePath)
 			if err != nil {
 				createdFile.Close()
@@ -621,11 +617,10 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				continue
 			}
 			createdFile.Close()
-			fmt.Println("Created a file")
 			noOfCreatedFiles++
 		}
 	}
-	fmt.Println("Created ", noOfCreatedFiles, "of files")
+	fmt.Println("Created ", noOfCreatedFiles, "files")
 	return nil
 }
 
