@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"unsafe"
@@ -519,7 +520,6 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 // It is the callers responsibility to ensure that
 // rootDir exists.
 func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
-
 	noOfCreatedFiles := 0
 	numberOfFiles, err := f.GetInt()
 	if err != nil {
@@ -531,86 +531,86 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 	}
 
 	for i := 0; i < maxNumberOfFiles; i++ {
-		subDir, err := f.GetString()
-		if err != nil {
-			// We don't stop the fuzzing job if we have created
-			// some files. In that case we want to feed them
-			// to the target
-			if noOfCreatedFiles > 0 {
-				return nil
-			}
-		}
-
-		// Avoid going outside the root dir
-		if strings.Contains(subDir, "../") || (len(subDir) > 0 && subDir[0] == 47) || strings.Contains(subDir, "\\") {
-			if noOfCreatedFiles > 0 {
-				return nil
-			} else {
-				return errors.New("Dir contains invalid chars")
-			}
-		}
-
-		dirPath, err := securejoin.SecureJoin(rootDir, subDir)
-		if err != nil {
-			if noOfCreatedFiles > 0 {
-				return nil
-			} else {
-				return errors.New("Could not join rootDir and subDir securely")
-			}
-		}
-		err = os.MkdirAll(dirPath, 0777)
-		if err != nil {
-			if noOfCreatedFiles > 0 {
-				return nil
-			} else {
-				return errors.New("Could not create the subDir")
-			}
-		}
+		// The file to create:
 		fileName, err := f.GetString()
 		if err != nil {
 			if noOfCreatedFiles > 0 {
+				// If files have been created, we don't return
+				// an error
 				return nil
 			} else {
 				return errors.New("Could not get fileName")
 			}
 		}
-		fullFilePath, err := securejoin.SecureJoin(dirPath, fileName)
-		if err != nil {
-			if noOfCreatedFiles > 0 {
-				return nil
-			} else {
-				return errors.New("Could not join dir path and file path securely")
-			}
-		}
-		fileContents, err := f.GetBytes()
-		if err != nil {
-			if noOfCreatedFiles > 0 {
-				return nil
-			} else {
-				return errors.New("Could not create the subDir")
-			}
-		}
+		var fullFilePath string
+		fullFilePath = fileName
 
-		createdFile, err := os.Create(fullFilePath)
-		if err != nil {
-			createdFile.Close()
-			if noOfCreatedFiles > 0 {
-				return nil
-			} else {
-				return errors.New("Could not create the subDir")
+		// Find the subdirectory of the file
+		subDir := filepath.Dir(fileName)
+		if subDir != "" {
+			// create the dir first
+
+			// Avoid going outside the root dir
+			if strings.Contains(subDir, "../") || (len(subDir) > 0 && subDir[0] == 47) || strings.Contains(subDir, "\\") {
+				continue
 			}
-		}
-		_, err = createdFile.Write(fileContents)
-		if err != nil {
-			createdFile.Close()
-			if noOfCreatedFiles > 0 {
-				return nil
-			} else {
-				return errors.New("Could not create the subDir")
+			dirPath := filepath.Join(rootDir, subDir)
+			dirPath, err := securejoin.SecureJoin(rootDir, subDir)
+			if err != nil {
+				continue
 			}
+			if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+			    err2 := os.MkdirAll(dirPath, 0777)
+			    if err2 != nil {
+			    	continue
+			    }
+			}
+			fullFilePath, err = securejoin.SecureJoin(dirPath, fileName)
+			if err != nil {
+				continue
+			}
+		} else {
+			// Create symlink
+			createSymlink, err := f.GetBool()
+			if err != nil {
+				if noOfCreatedFiles > 0 {
+				return nil
+				} else {
+					return errors.New("Could not create the subDir")
+				}
+			}
+			if createSymlink {
+				symlinkTarget, err := f.GetString()
+				if err != nil {
+					return err
+				}
+				os.Symlink(symlinkTarget, fullFilePath)
+				// stop loop here, since a symlink needs no further action
+				continue
+			}
+
+			// We create a normal file
+			fileContents, err := f.GetBytes()
+			if err != nil {
+				if noOfCreatedFiles > 0 {
+					return nil
+				} else {
+					return errors.New("Could not create the subDir")
+				}
+			}
+
+			createdFile, err := os.Create(fullFilePath)
+			if err != nil {
+				createdFile.Close()
+				continue
+			}
+			_, err = createdFile.Write(fileContents)
+			if err != nil {
+				createdFile.Close()
+				continue
+			}
+			createdFile.Close()
 		}
-		createdFile.Close()
-		noOfCreatedFiles++
 	}
 	return nil
 }
