@@ -1,4 +1,4 @@
-package fuzz 
+package container
 
 import (
 	"archive/tar"
@@ -10,42 +10,43 @@ import (
 	"io/ioutil"
 	"os"
 	"time"
+
 	//"unicode/utf8"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
-	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 // uncompressedLayer implements partial.UncompressedLayer from raw bytes.
-type uncompressedLayer struct {
+type uncompressedLayer2 struct {
 	diffID    v1.Hash
 	mediaType types.MediaType
 	content   []byte
 }
 
 // DiffID implements partial.UncompressedLayer
-func (ul *uncompressedLayer) DiffID() (v1.Hash, error) {
+func (ul *uncompressedLayer2) DiffID() (v1.Hash, error) {
 	return ul.diffID, nil
 }
 
 // Uncompressed implements partial.UncompressedLayer
-func (ul *uncompressedLayer) Uncompressed() (io.ReadCloser, error) {
+func (ul *uncompressedLayer2) Uncompressed() (io.ReadCloser, error) {
 	return ioutil.NopCloser(bytes.NewBuffer(ul.content)), nil
 }
 
 // MediaType returns the media type of the layer
-func (ul *uncompressedLayer) MediaType() (types.MediaType, error) {
+func (ul *uncompressedLayer2) MediaType() (types.MediaType, error) {
 	return ul.mediaType, nil
 }
 
-var _ partial.UncompressedLayer = (*uncompressedLayer)(nil)
+var _ partial.UncompressedLayer = (*uncompressedLayer2)(nil)
 
 var counter = 0
 var counter2 = 0
@@ -150,10 +151,10 @@ func Layer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 	if err != nil {
 		return nil, err
 	}
-	if noOfFiles%50==0 {
+	if noOfFiles%50 == 0 {
 		return nil, fmt.Errorf("No files to be created")
 	}
-	for i:=0;i<noOfFiles%50;i++ {
+	for i := 0; i < noOfFiles%50; i++ {
 		// Write a single file with a random name and random contents.
 		fileName, err := f.GetString()
 		if err != nil {
@@ -184,7 +185,7 @@ func Layer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 		Hex:       hex.EncodeToString(hasher.Sum(make([]byte, 0, hasher.Size()))),
 	}
 
-	return partial.UncompressedToLayer(&uncompressedLayer{
+	return partial.UncompressedToLayer(&uncompressedLayer2{
 		diffID:    h,
 		mediaType: mt,
 		content:   b.Bytes(),

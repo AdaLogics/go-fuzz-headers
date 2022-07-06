@@ -1,4 +1,4 @@
-package gofuzzheaders
+package container
 
 import (
 	"archive/tar"
@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
@@ -53,7 +54,7 @@ var layerTypes = []types.MediaType{types.DockerLayer, types.DockerUncompressedLa
 // Usage:
 // f := NewConsumer(data)
 // imagebytes, err := f.GetImageBytes()
-func (f *ConsumeFuzzer) GetImageBytes() ([]byte, error) {
+func GetImageBytes(f *fuzz.ConsumeFuzzer) ([]byte, error) {
 	img, err := createImage(f)
 	if err != nil {
 		return []byte{}, err
@@ -93,7 +94,7 @@ func (f *ConsumeFuzzer) GetImageBytes() ([]byte, error) {
 
 // createImage implements a helper that allows the fuzzer to create
 // a container image
-func createImage(f *ConsumeFuzzer) (v1.Image, error) {
+func createImage(f *fuzz.ConsumeFuzzer) (v1.Image, error) {
 	adds := make([]mutate.Addendum, 0, 5)
 	noOfLayers, err := f.GetInt()
 	if err != nil {
@@ -134,7 +135,7 @@ func createImage(f *ConsumeFuzzer) (v1.Image, error) {
 	return mutate.Append(empty.Image, adds...)
 }
 
-func getLayerType(f *ConsumeFuzzer) (types.MediaType, error) {
+func getLayerType(f *fuzz.ConsumeFuzzer) (types.MediaType, error) {
 	layerIndex, err := f.GetInt()
 	if err != nil {
 		return types.OCILayer, err
@@ -143,7 +144,7 @@ func getLayerType(f *ConsumeFuzzer) (types.MediaType, error) {
 }
 
 // createLayer returns a layer with pseudo-randomly generated content.
-func createLayer(f *ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
+func createLayer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 	// Hash the contents as we write it out to the buffer.
 	var b bytes.Buffer
 	hasher := sha256.New()
