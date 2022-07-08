@@ -691,3 +691,27 @@ func (f *ConsumeFuzzer) CreateSlice(targetSlice interface{}) error {
 	}
 	return nil
 }
+
+// This could randomize the buffer more, but let's take it for now.
+// Ideally we don't want to just repeat byte sequences.
+func (f *ConsumeFuzzer) CreateLargeBuffer(length int) []byte {
+	var buf bytes.Buffer
+	dataLen := len(f.data)
+	var bytesToGoBack int
+	for i := 0; i < length; i++ {
+
+		// We reset the position if we reach the end of the
+		// buffer allocated by the fuzzer.
+		if f.position == dataLen-1 {
+			if bytesToGoBack == dataLen {
+				bytesToGoBack = 1
+			}
+			bytesToGoBack++
+			resetPosition := f.position - bytesToGoBack
+			f.position = resetPosition
+		}
+		buf.Write([]byte{f.data[f.position]})
+		f.position++
+	}
+	return buf.Bytes()
+}
