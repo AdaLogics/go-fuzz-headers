@@ -1,7 +1,7 @@
 package gofuzzheaders
 
 import (
-	//"fmt"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -272,4 +272,11 @@ func TestCreateFiles(t *testing.T) {
 	if !reflect.DeepEqual(d, []byte{0x42, 0x43, 0x44}) {
 		t.Fatalf("Wrong read byteslice. Was %+v\n", d)
 	}
+}
+
+func TestCreateLargeBuffer(t *testing.T) {
+	data := []byte{0x5, 0x41, 0x43, 0x76, 0x23, 0x36, 0x54, 0x17, 0x54, 0x41, 0x42, 0x43, 0x5, 0x41, 0x43, 0x76, 0x23, 0x36, 0x54, 0x17, 0x54, 0x41, 0x42, 0x43}
+	f := NewConsumer(data)
+	largeBuffer := f.CreateLargeBuffer(200)
+	fmt.Println(largeBuffer, len(largeBuffer))
 }
