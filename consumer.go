@@ -424,11 +424,10 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if len(f.data) == 0 || f.position >= len(f.data) {
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
-	length, err := f.GetUint32()
+	length, err := f.GetInt()
 	if err != nil {
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
-	length = length%2000000 // an arbitrary max length
 	byteBegin := f.position + 1
 	if byteBegin >= len(f.data) {
 		return nil, errors.New("Not enough bytes to create byte array")
