@@ -442,8 +442,11 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if length == 0 {
 		return nil, errors.New("Zero-length is not supported")
 	}
-	if byteBegin+uint32(length) >= uint32(len(f.data)) {
+	if byteBegin+length >= uint32(len(f.data)) {
 		return nil, errors.New("Not enough bytes to create byte array")
+	}
+	if byteBegin+length<byteBegin {
+		return nil, errors.New("Nunmbers overflow. Returning")
 	}
 	b := f.data[byteBegin : byteBegin+length]
 	f.position = byteBegin + length
@@ -467,6 +470,9 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 	}
 	if byteBegin+length > uint32(len(f.data)) {
 		return "nil", errors.New("Not enough bytes to create string")
+	}
+	if byteBegin > byteBegin+length {
+		return "nil", errors.New("Nunmbers overflow. Returning")
 	}
 	str := string(f.data[byteBegin : byteBegin+length])
 	f.position = byteBegin + length
