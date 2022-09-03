@@ -445,7 +445,7 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if byteBegin+length >= uint32(len(f.data)) {
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
-	if byteBegin+length<byteBegin {
+	if byteBegin+length < byteBegin {
 		return nil, errors.New("Nunmbers overflow. Returning")
 	}
 	b := f.data[byteBegin : byteBegin+length]
