@@ -525,6 +525,24 @@ func returnTarBytes(buf []byte) ([]byte, error) {
 	return nil, fmt.Errorf("Not enough files were created\n")
 }
 
+func setTarHeaderFormat(hdr *tar.Header, f *ConsumeFuzzer) error {
+	ind, err := f.GetInt()
+	if err != nil {
+		return err
+	}
+	switch ind % 4 {
+	case 0:
+		hdr.Format = tar.FormatUnknown
+	case 1:
+		hdr.Format = tar.FormatUSTAR
+	case 2:
+		hdr.Format = tar.FormatPAX
+	case 3:
+		hdr.Format = tar.FormatGNU
+	}
+	return nil
+}
+
 func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
 	ind, err := f.GetInt()
 	if err != nil {
@@ -618,6 +636,11 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 		hdr.Name = filename
 		hdr.Size = int64(len(filebody))
 		hdr.Mode = 0600
+
+		err = setTarHeaderFormat(hdr, f)
+		if err != nil {
+			return returnTarBytes(buf.Bytes())
+		}
 
 		if err := tw.WriteHeader(hdr); err != nil {
 			return returnTarBytes(buf.Bytes())
