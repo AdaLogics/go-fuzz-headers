@@ -534,8 +534,18 @@ func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
 		hdr.Typeflag = tar.TypeReg
 	case 1:
 		hdr.Typeflag = tar.TypeLink
+		linkname, err := f.GetString()
+		if err != nil {
+			return err
+		}
+		hdr.Linkname = linkname
 	case 2:
 		hdr.Typeflag = tar.TypeSymlink
+		linkname, err := f.GetString()
+		if err != nil {
+			return err
+		}
+		hdr.Linkname = linkname
 	case 3:
 		hdr.Typeflag = tar.TypeChar
 	case 4:
@@ -582,18 +592,19 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 			return returnTarBytes(buf.Bytes())
 		}
 		hdr := &tar.Header{}
-		err = f.GenerateStruct(hdr)
+		/*err = f.GenerateStruct(hdr)
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
-		}
-		hdr.Name = filename
-		hdr.Size = int64(len(filebody))
-		hdr.Mode = 0600
+		}*/
 
 		err = setTarHeaderTypeflag(hdr, f)
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
+
+		hdr.Name = filename
+		hdr.Size = int64(len(filebody))
+		hdr.Mode = 0600
 
 		if err := tw.WriteHeader(hdr); err != nil {
 			return returnTarBytes(buf.Bytes())
