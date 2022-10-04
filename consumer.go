@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"time"
 	"unsafe"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
@@ -601,6 +602,18 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
+
+		sec, err := f.GetInt()
+		if err != nil {
+			return returnTarBytes(buf.Bytes())
+		}
+
+		nsec, err := f.GetInt()
+		if err != nil {
+			return returnTarBytes(buf.Bytes())
+		}
+
+		hdr.ModTime = time.Unix(int64(sec), int64(nsec))
 
 		hdr.Name = filename
 		hdr.Size = int64(len(filebody))
