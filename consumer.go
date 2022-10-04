@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"path/filepath"
@@ -500,45 +501,67 @@ func (f *ConsumeFuzzer) FuzzMap(m interface{}) error {
 	return nil
 }
 
+func returnTarBytes(buf []byte) ([]byte, error) {
+	reader := bytes.NewReader(buf)
+	tr := tar.NewReader(reader)
+
+	// Count files
+	var fileCounter int
+	fileCounter = 0
+	for {
+		_, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		fileCounter++
+	}
+	if fileCounter > 4 {
+		return buf, nil
+	}
+	return nil, fmt.Errorf("Not enough files were created\n")
+}
+
 // TarBytes returns valid bytes for a tar archive
 func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
-	var buf bytes.Buffer
-	tw := tar.NewWriter(&buf)
-
 	numberOfFiles, err := f.GetInt()
 	if err != nil {
 		return nil, err
 	}
+
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	defer tw.Close()
+
 	maxNoOfFiles := 100000
 	for i := 0; i < numberOfFiles%maxNoOfFiles; i++ {
 		filename, err := f.GetString()
 		if err != nil {
-			return nil, err
+			return returnTarBytes(buf.Bytes())
 		}
 		filebody, err := f.GetBytes()
 		if err != nil {
-			return nil, err
+			return returnTarBytes(buf.Bytes())
 		}
 		hdr := &tar.Header{}
 		err = f.GenerateStruct(hdr)
 		if err != nil {
-			return nil, err
+			return returnTarBytes(buf.Bytes())
 		}
 		hdr.Name = filename
 		hdr.Size = int64(len(filebody))
 		hdr.Mode = 0600
 
 		if err := tw.WriteHeader(hdr); err != nil {
-			return nil, err
+			return returnTarBytes(buf.Bytes())
 		}
 		if _, err := tw.Write(filebody); err != nil {
-			return nil, err
+			return returnTarBytes(buf.Bytes())
 		}
 	}
-	if err := tw.Close(); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	return returnTarBytes(buf.Bytes())
 }
 
 // Creates pseudo-random files in rootDir.
