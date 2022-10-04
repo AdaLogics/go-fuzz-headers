@@ -524,6 +524,42 @@ func returnTarBytes(buf []byte) ([]byte, error) {
 	return nil, fmt.Errorf("Not enough files were created\n")
 }
 
+func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
+	ind, err := f.GetInt()
+	if err != nil {
+		return err
+	}
+	switch ind % 13 {
+	case 0:
+		hdr.Typeflag = tar.TypeReg
+	case 1:
+		hdr.Typeflag = tar.TypeLink
+	case 2:
+		hdr.Typeflag = tar.TypeSymlink
+	case 3:
+		hdr.Typeflag = tar.TypeChar
+	case 4:
+		hdr.Typeflag = tar.TypeBlock
+	case 5:
+		hdr.Typeflag = tar.TypeDir
+	case 6:
+		hdr.Typeflag = tar.TypeFifo
+	case 7:
+		hdr.Typeflag = tar.TypeCont
+	case 8:
+		hdr.Typeflag = tar.TypeXHeader
+	case 9:
+		hdr.Typeflag = tar.TypeXGlobalHeader
+	case 10:
+		hdr.Typeflag = tar.TypeGNUSparse
+	case 11:
+		hdr.Typeflag = tar.TypeGNULongName
+	case 12:
+		hdr.Typeflag = tar.TypeGNULongLink
+	}
+	return nil
+}
+
 // TarBytes returns valid bytes for a tar archive
 func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 	numberOfFiles, err := f.GetInt()
@@ -553,6 +589,11 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 		hdr.Name = filename
 		hdr.Size = int64(len(filebody))
 		hdr.Mode = 0600
+
+		err = setTarHeaderTypeflag(hdr, f)
+		if err != nil {
+			return returnTarBytes(buf.Bytes())
+		}
 
 		if err := tw.WriteHeader(hdr); err != nil {
 			return returnTarBytes(buf.Bytes())
