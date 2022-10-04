@@ -535,7 +535,7 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 	tw := tar.NewWriter(&buf)
 	defer tw.Close()
 
-	maxNoOfFiles := 100000
+	maxNoOfFiles := 1000
 	for i := 0; i < numberOfFiles%maxNoOfFiles; i++ {
 		filename, err := f.GetString()
 		if err != nil {
