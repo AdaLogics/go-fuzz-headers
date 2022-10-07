@@ -589,6 +589,29 @@ func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
 	return nil
 }
 
+func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
+	filebody, err := f.GetBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	// Trick fuzzer to explore large file sizes.
+	if len(filebody) > 200 {
+		if len(filebody) > 2000 {
+			if len(filebody) > 20000 {
+				if len(filebody) > 200000 {
+					if len(filebody) > 800000 {
+						if len(filebody) > 1200000 {
+						}
+					}
+				}
+			}
+		}
+	}
+	return filebody, nil
+
+}
+
 // TarBytes returns valid bytes for a tar archive
 func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 	numberOfFiles, err := f.GetInt()
@@ -606,7 +629,7 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
-		filebody, err := f.GetBytes()
+		filebody, err := f.createTarFileBody()
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
