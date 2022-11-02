@@ -196,16 +196,23 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 			e.SetString(str)
 		}
 	case reflect.Slice:
-		maxElements := 50
-		randQty, err := f.GetInt()
+		var maxElements uint64
+		// Byte slices should not be restricted
+		if e.Kind().String() == "[]uint8" {
+			maxElements = 10000000
+		} else {
+			maxElements = 50
+		}
+
+		randQty, err := f.GetUint64()
 		if err != nil {
 			return err
 		}
 		numOfElements := randQty % maxElements
 
-		uu := reflect.MakeSlice(e.Type(), numOfElements, numOfElements)
+		uu := reflect.MakeSlice(e.Type(), int(numOfElements), int(numOfElements))
 
-		for i := 0; i < numOfElements; i++ {
+		for i := 0; i < int(numOfElements); i++ {
 			err := f.fuzzStruct(uu.Index(i), customFunctions)
 			if err != nil {
 				return err
