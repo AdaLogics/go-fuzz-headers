@@ -1,5 +1,6 @@
 package gofuzzheaders
 
+/*
 import (
 	"testing"
 )
@@ -61,4 +62,4 @@ func testFuncs() []interface{} {
 			return nil
 		},
 	}
-}
+}*/
