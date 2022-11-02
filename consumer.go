@@ -196,26 +196,38 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 			e.SetString(str)
 		}
 	case reflect.Slice:
-		var maxElements uint64
+		var maxElements uint32
 		// Byte slices should not be restricted
-		if e.Kind().String() == "[]uint8" {
+		if e.Type().String() == "[]uint8" {
 			maxElements = 10000000
 		} else {
 			maxElements = 50
 		}
 
-		randQty, err := f.GetUint64()
+		randQty, err := f.GetUint32()
 		if err != nil {
 			return err
 		}
-		numOfElements := randQty % maxElements
+		var numOfElements uint32
+		numOfElements = randQty % maxElements
+		if (uint32(len(f.data)) - f.position) < numOfElements {
+			numOfElements = uint32(len(f.data)) - f.position
+		}
 
 		uu := reflect.MakeSlice(e.Type(), int(numOfElements), int(numOfElements))
 
 		for i := 0; i < int(numOfElements); i++ {
 			err := f.fuzzStruct(uu.Index(i), customFunctions)
+			// If we have more than 10, then we can proceed with that.
 			if err != nil {
-				return err
+				if i >= 10 {
+					if e.CanSet() {
+						e.Set(uu)
+					}
+					return nil
+				} else {
+					return err
+				}
 			}
 		}
 		if e.CanSet() {
@@ -444,7 +456,7 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if f.position+length > MaxTotalLen {
 		return nil, errors.New("Created too large a string")
 	}
-	byteBegin := f.position + 1
+	byteBegin := f.position - 1
 	if byteBegin >= uint32(len(f.data)) {
 		return nil, errors.New("Not enough bytes to create byte array")
 	}
@@ -470,10 +482,10 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 	if err != nil {
 		return "nil", errors.New("Not enough bytes to create string")
 	}
-	if f.position+length > MaxTotalLen {
+	if f.position > MaxTotalLen {
 		return "nil", errors.New("Created too large a string")
 	}
-	byteBegin := f.position + 1
+	byteBegin := f.position - 1
 	if byteBegin >= uint32(len(f.data)) {
 		return "nil", errors.New("Not enough bytes to create string")
 	}
@@ -481,7 +493,7 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 		return "nil", errors.New("Not enough bytes to create string")
 	}
 	if byteBegin > byteBegin+length {
-		return "nil", errors.New("Nunmbers overflow. Returning")
+		return "nil", errors.New("Numbers overflow. Returning")
 	}
 	str := string(f.data[byteBegin : byteBegin+length])
 	f.position = byteBegin + length
