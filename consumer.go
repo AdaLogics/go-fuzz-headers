@@ -619,10 +619,18 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 
 	// A bit of optimization to attempt to create a file body
 	// when we don't have as many bytes left as "length"
+	remainingBytes := (uint32(len(f.data)) - f.position)
+	totalDataLen := uint32(len(f.data))
 	if uint32(len(f.data))-f.position < 50 {
-		length = length % (uint32(len(f.data)) - f.position)
-	} else if uint32(len(f.data)) < 500 {
-		length = length
+		if remainingBytes == 0 {
+			return nil, errors.New("Created too large a string")
+		}
+		length = length % remainingBytes
+	} else if len(f.data) < 500 {
+		if totalDataLen == 0 {
+			return nil, errors.New("Created too large a string")
+		}
+		length = length % totalDataLen
 	}
 	if f.position+length > MaxTotalLen {
 		return nil, errors.New("Created too large a string")
@@ -660,10 +668,18 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 
 	// A bit of optimization to attempt to create a file name
 	// when we don't have as many bytes left as "length"
+	remainingBytes := (uint32(len(f.data)) - f.position)
+	totalDataLen := uint32(len(f.data))
 	if uint32(len(f.data))-f.position < 50 {
-		length = length % (uint32(len(f.data)) - f.position)
+		if remainingBytes == 0 {
+			return "nil", errors.New("Created too large a string")
+		}
+		length = length % remainingBytes
 	} else if len(f.data) < 500 {
-		length = length % uint32(len(f.data))
+		if totalDataLen == 0 {
+			return "nil", errors.New("Created too large a string")
+		}
+		length = length % totalDataLen
 	}
 	if f.position > MaxTotalLen {
 		return "nil", errors.New("Created too large a string")
