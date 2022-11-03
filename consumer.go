@@ -609,26 +609,78 @@ func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
 }
 
 func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
-	filebody, err := f.GetBytes()
+	if len(f.data) == 0 || f.position >= uint32(len(f.data)) {
+		return nil, errors.New("Not enough bytes to create byte array")
+	}
+	length, err := f.GetUint32()
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Not enough bytes to create byte array")
 	}
 
-	// Trick fuzzer to explore large file sizes.
-	if len(filebody) > 200 {
-		if len(filebody) > 2000 {
-			if len(filebody) > 20000 {
-				if len(filebody) > 200000 {
-					if len(filebody) > 800000 {
-						if len(filebody) > 1200000 {
-						}
-					}
-				}
-			}
-		}
+	// A bit of optimization to attempt to create a file body
+	// when we don't have as many bytes left as "length"
+	if uint32(len(f.data))-f.position < 50 {
+		length = length % (uint32(len(f.data)) - f.position)
+	} else if uint32(len(f.data)) < 500 {
+		length = length
 	}
+	if f.position+length > MaxTotalLen {
+		return nil, errors.New("Created too large a string")
+	}
+	byteBegin := f.position - 1
+	if byteBegin >= uint32(len(f.data)) {
+		return nil, errors.New("Not enough bytes to create byte array")
+	}
+	if length == 0 {
+		return nil, errors.New("Zero-length is not supported")
+	}
+	if byteBegin+length >= uint32(len(f.data)) {
+		return nil, errors.New("Not enough bytes to create byte array")
+	}
+	if byteBegin+length < byteBegin {
+		return nil, errors.New("Nunmbers overflow. Returning")
+	}
+	filebody := f.data[byteBegin : byteBegin+length]
+	f.position = byteBegin + length
 	return filebody, nil
 
+}
+
+// Is similar to GetString(), but creates string based on the length
+// of the length of f.data to increase the likelihood of not overflowing
+// f.data
+func (f *ConsumeFuzzer) getTarFilename() (string, error) {
+	if f.position >= uint32(len(f.data)) {
+		return "nil", errors.New("Not enough bytes to create string")
+	}
+	length, err := f.GetUint32()
+	if err != nil {
+		return "nil", errors.New("Not enough bytes to create string")
+	}
+
+	// A bit of optimization to attempt to create a file name
+	// when we don't have as many bytes left as "length"
+	if uint32(len(f.data))-f.position < 50 {
+		length = length % (uint32(len(f.data)) - f.position)
+	} else if len(f.data) < 500 {
+		length = length % uint32(len(f.data))
+	}
+	if f.position > MaxTotalLen {
+		return "nil", errors.New("Created too large a string")
+	}
+	byteBegin := f.position - 1
+	if byteBegin >= uint32(len(f.data)) {
+		return "nil", errors.New("Not enough bytes to create string")
+	}
+	if byteBegin+length > uint32(len(f.data)) {
+		return "nil", errors.New("Not enough bytes to create string")
+	}
+	if byteBegin > byteBegin+length {
+		return "nil", errors.New("Numbers overflow. Returning")
+	}
+	str := string(f.data[byteBegin : byteBegin+length])
+	f.position = byteBegin + length
+	return str, nil
 }
 
 // TarBytes returns valid bytes for a tar archive
@@ -644,7 +696,7 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 
 	maxNoOfFiles := 1000
 	for i := 0; i < numberOfFiles%maxNoOfFiles; i++ {
-		filename, err := f.GetString()
+		filename, err := f.getTarFilename()
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
@@ -653,10 +705,6 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 			return returnTarBytes(buf.Bytes())
 		}
 		hdr := &tar.Header{}
-		/*err = f.GenerateStruct(hdr)
-		if err != nil {
-			return returnTarBytes(buf.Bytes())
-		}*/
 
 		err = setTarHeaderTypeflag(hdr, f)
 		if err != nil {

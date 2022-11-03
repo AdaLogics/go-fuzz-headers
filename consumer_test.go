@@ -19,7 +19,7 @@ func TestStruct_fuzzing1(t *testing.T) {
 		0x41, 0x42, 0x43,
 		0x00, 0x00, 0x00, 0x03, // Length field 2 (= 3)
 		0x41, 0x42, 0x43,
-		0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x03, // Length slice (= 1)
+		0x01, 0x01, 0x01, 0x03, // Length slice (= 1)
 		0x02, // endian bool (I think)
 		0x41} // Field3
 
@@ -36,7 +36,7 @@ func TestStruct_fuzzing1(t *testing.T) {
 		t.Errorf("ts1.Field2 was %v but should be 'ABC'", ts1.Field2)
 	}
 	if string(ts1.Field3) != "A" {
-		t.Errorf("ts1.Field3 was %v but should be 'ABCD'", ts1.Field3)
+		t.Errorf("ts1.Field3 was %v but should be 'A'", ts1.Field3)
 	}
 }
 
