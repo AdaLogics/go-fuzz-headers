@@ -278,7 +278,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 	case reflect.Map:
 		if e.CanSet() {
 			e.Set(reflect.MakeMap(e.Type()))
-			maxElements := 50
+			const maxElements = 50
 			randQty, err := f.GetInt()
 			if err != nil {
 				return err
@@ -323,7 +323,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 
 func (f *ConsumeFuzzer) GetStringArray() (reflect.Value, error) {
 	// The max size of the array:
-	max := uint32(20)
+	const max uint32 = 20
 
 	arraySize := f.position
 	if arraySize > max {
@@ -686,7 +686,7 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 	tw := tar.NewWriter(&buf)
 	defer tw.Close()
 
-	maxNoOfFiles := 1000
+	const maxNoOfFiles = 1000
 	for i := 0; i < numberOfFiles%maxNoOfFiles; i++ {
 		filename, err := f.getTarFilename()
 		if err != nil {

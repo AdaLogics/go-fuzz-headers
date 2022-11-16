@@ -61,7 +61,7 @@ func Fuzz(data []byte) int {
 	/*if counter<5000 {
 		return 1
 	}*/
-	runes := "abcdefghijklmnopqrstuvwxyz0123456789_-.ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	const runes = "abcdefghijklmnopqrstuvwxyz0123456789_-.ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	tagNameString, err := f.GetStringFrom(runes, 126)
 	/*if utf8.RuneCountInString(tagNameString)!=0 {
 		fmt.Println(utf8.RuneCountInString(tagNameString))
