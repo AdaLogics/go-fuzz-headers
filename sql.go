@@ -16,7 +16,7 @@ func getKeyword(f *ConsumeFuzzer) (string, error) {
 			return k, nil
 		}
 	}
-	return keywords[0], fmt.Errorf("Could not get a kw")
+	return keywords[0], fmt.Errorf("could not get a kw")
 }
 
 // Simple utility function to check if a string
@@ -299,7 +299,7 @@ func createAlterTableStmt(f *ConsumeFuzzer) (string, error) {
 	}
 	maxArgs = maxArgs % 30
 	if maxArgs == 0 {
-		return "", fmt.Errorf("Could not create alter table stmt")
+		return "", fmt.Errorf("could not create alter table stmt")
 	}
 	for i := 0; i < maxArgs; i++ {
 		// Calculate if we get existing token or custom string
@@ -482,7 +482,7 @@ func createQuery(f *ConsumeFuzzer) (string, error) {
 	}
 	maxLen := queryLen % 60
 	if maxLen == 0 {
-		return "", fmt.Errorf("Could not create a query")
+		return "", fmt.Errorf("could not create a query")
 	}
 	var query strings.Builder
 	for i := 0; i < maxLen; i++ {
@@ -506,7 +506,7 @@ func createQuery(f *ConsumeFuzzer) (string, error) {
 		}
 	}
 	if query.String() == "" {
-		return "", fmt.Errorf("Could not create a query")
+		return "", fmt.Errorf("could not create a query")
 	}
 	return query.String(), nil
 }
