@@ -796,7 +796,10 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				if err != nil {
 					return err
 				}
-				os.Symlink(symlinkTarget, fullFilePath)
+				err = os.Symlink(symlinkTarget, fullFilePath)
+				if err != nil {
+					return err
+				}
 				// stop loop here, since a symlink needs no further action
 				noOfCreatedFiles++
 				continue
