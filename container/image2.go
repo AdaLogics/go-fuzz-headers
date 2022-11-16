@@ -179,13 +179,11 @@ func Layer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 		}
 	}
 
-	h := v1.Hash{
-		Algorithm: "sha256",
-		Hex:       hex.EncodeToString(hasher.Sum(make([]byte, 0, hasher.Size()))),
-	}
-
 	return partial.UncompressedToLayer(&uncompressedLayer2{
-		diffID:    h,
+		diffID: v1.Hash{
+			Algorithm: "sha256",
+			Hex:       hex.EncodeToString(hasher.Sum(make([]byte, 0, hasher.Size()))),
+		},
 		mediaType: mt,
 		content:   b.Bytes(),
 	})

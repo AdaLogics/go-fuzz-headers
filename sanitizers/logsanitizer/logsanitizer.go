@@ -18,10 +18,9 @@ type Sanitizer struct {
 }
 
 func NewSanitizer() *Sanitizer {
-	s := &Sanitizer{}
-	s.stringsToCheck = make([]string, 0)
-	s.checkInsecureString = false
-	return s
+	return &Sanitizer{
+		stringsToCheck: []string{},
+	}
 }
 
 // SetLogFile sets the path to the logfile.
