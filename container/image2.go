@@ -7,11 +7,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"time"
-
-	//"unicode/utf8"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -38,7 +35,7 @@ func (ul *uncompressedLayer2) DiffID() (v1.Hash, error) {
 
 // Uncompressed implements partial.UncompressedLayer
 func (ul *uncompressedLayer2) Uncompressed() (io.ReadCloser, error) {
-	return ioutil.NopCloser(bytes.NewBuffer(ul.content)), nil
+	return io.NopCloser(bytes.NewBuffer(ul.content)), nil
 }
 
 // MediaType returns the media type of the layer
