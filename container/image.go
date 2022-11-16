@@ -73,17 +73,8 @@ func GetImageBytes(f *fuzz.ConsumeFuzzer) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	// Create the tar file to write the bytes to
 	// Todo: Remove this and write to a buffer instead
-	fp, err := os.Create("tarball")
-	if err != nil {
-		panic(err)
-	}
-	defer fp.Close()
-	defer os.Remove(fp.Name())
-
-	// Write the bytes to a file
-	if err := tarball.WriteToFile(fp.Name(), tag, img); err != nil {
+	if err := tarball.WriteToFile("tarball", tag, img); err != nil {
 		return []byte{}, err
 	}
 
