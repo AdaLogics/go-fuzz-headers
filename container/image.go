@@ -160,7 +160,7 @@ func createLayer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 	}
 	noOfFiles = noOfFiles % 50
 	if noOfFiles == 0 {
-		return nil, fmt.Errorf("No files to be created")
+		return nil, fmt.Errorf("no files to be created")
 	}
 	for i := 0; i < noOfFiles; i++ {
 		// Write a single file with a random name and random contents.
