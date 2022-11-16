@@ -79,21 +79,16 @@ func Fuzz(data []byte) int {
 		return 0
 	}
 
-	fp, err := os.Create("tarball")
-	if err != nil {
+	// Todo: Remove this and write to a buffer instead
+	if err := tarball.WriteToFile("tarball", tag, img); err != nil {
 		panic(err)
 	}
-	defer fp.Close()
-	defer os.Remove(fp.Name())
-	if err := tarball.WriteToFile(fp.Name(), tag, img); err != nil {
-		panic(err)
-	}
-	fmt.Println("Wrote to ", fp.Name(), "counter2: ", counter2)
+	fmt.Println("Wrote to 'tarball' counter2: ", counter2)
 	fileData, err := os.ReadFile("tarball")
 	if err != nil {
 		return 0
 	}
-	os.Stdout.Write(fileData)
+	_, _ = os.Stdout.Write(fileData)
 
 	counter2++
 	return 1
