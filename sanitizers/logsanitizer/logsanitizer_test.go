@@ -2,12 +2,26 @@ package logsanitizer
 
 import (
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 )
 
 func TestSanitizer(t *testing.T) {
+	tmpDir := t.TempDir()
+	logFileAbs := filepath.Join(tmpDir, "test-logfile")
+	err := os.WriteFile(logFileAbs, []byte("\nDEBUFUZZ2[0027]\nDEBUFUZZ[0027]\n"), 0o666)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// set up sanitizer
+	s := NewSanitizer()
+
+	// set up log file in sanitizer
+	s.SetLogFile(logFileAbs)
+
 	defer func() {
 		if r := recover(); r != nil {
 			var err string
@@ -19,30 +33,13 @@ func TestSanitizer(t *testing.T) {
 			case error:
 				err = r.(error).Error()
 			}
-			if strings.Contains(err, "Insecure string found") {
-				// Getting here means that the test passed
-			} else {
-				panic(err)
+			if !strings.Contains(err, "Insecure string found") {
+				t.Error(err)
 			}
 		} else {
-			panic("We should have recovered a panic")
+			t.Error("we should have recovered a panic")
 		}
 	}()
-
-	logFileAbs := "/tmp/test-logfile"
-	logFile, err := os.Create(logFileAbs)
-	if err != nil {
-		panic(err)
-	}
-	logFile.WriteString("\nDEBUFUZZ2[0027]\n")
-	logFile.WriteString("DEBUFUZZ[0027]\n")
-	logFile.Close()
-
-	// set up sanitizer
-	s := NewSanitizer()
-
-	// set up log file in sanitizer
-	s.SetLogFile(logFileAbs)
 
 	// Do the log file checking. This will usually be done
 	// in a defer statement in the fuzzer.
