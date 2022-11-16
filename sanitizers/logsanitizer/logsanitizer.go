@@ -80,11 +80,9 @@ func (s *Sanitizer) CheckLogfile() {
 // Checks if the line (which is a line from the log line) contains any
 // insecure strings.
 func (s *Sanitizer) hasInsecureString(line string) bool {
-	if len(s.stringsToCheck) != 0 {
-		for _, a := range s.stringsToCheck {
-			if strings.Contains(line, a) {
-				return true
-			}
+	for _, a := range s.stringsToCheck {
+		if strings.Contains(line, a) {
+			return true
 		}
 	}
 	return false
