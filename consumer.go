@@ -390,11 +390,11 @@ func (f *ConsumeFuzzer) GetNBytes(numberOfBytes int) ([]byte, error) {
 func (f *ConsumeFuzzer) GetUint16() (uint16, error) {
 	u16, err := f.GetNBytes(2)
 	if err != nil {
-		return uint16(0), err
+		return 0, err
 	}
 	littleEndian, err := f.GetBool()
 	if err != nil {
-		return uint16(0), err
+		return 0, err
 	}
 	if littleEndian {
 		u16LE := binary.LittleEndian.Uint16(u16)
@@ -407,11 +407,11 @@ func (f *ConsumeFuzzer) GetUint16() (uint16, error) {
 func (f *ConsumeFuzzer) GetUint32() (uint32, error) {
 	u32, err := f.GetNBytes(4)
 	if err != nil {
-		return uint32(0), err
+		return 0, err
 	}
 	littleEndian, err := f.GetBool()
 	if err != nil {
-		return uint32(0), err
+		return 0, err
 	}
 	if littleEndian {
 		u32LE := binary.LittleEndian.Uint32(u32)
@@ -424,11 +424,11 @@ func (f *ConsumeFuzzer) GetUint32() (uint32, error) {
 func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
 	u64, err := f.GetNBytes(8)
 	if err != nil {
-		return uint64(0), err
+		return 0, err
 	}
 	littleEndian, err := f.GetBool()
 	if err != nil {
-		return uint64(0), err
+		return 0, err
 	}
 	if littleEndian {
 		u64LE := binary.LittleEndian.Uint64(u64)
@@ -878,11 +878,11 @@ func (f *ConsumeFuzzer) GetRune() ([]rune, error) {
 func (f *ConsumeFuzzer) GetFloat32() (float32, error) {
 	u32, err := f.GetNBytes(4)
 	if err != nil {
-		return float32(0.0), err
+		return 0, err
 	}
 	littleEndian, err := f.GetBool()
 	if err != nil {
-		return float32(0.0), err
+		return 0, err
 	}
 	if littleEndian {
 		u32LE := binary.LittleEndian.Uint32(u32)
@@ -895,11 +895,11 @@ func (f *ConsumeFuzzer) GetFloat32() (float32, error) {
 func (f *ConsumeFuzzer) GetFloat64() (float64, error) {
 	u64, err := f.GetNBytes(8)
 	if err != nil {
-		return float64(0.0), err
+		return 0, err
 	}
 	littleEndian, err := f.GetBool()
 	if err != nil {
-		return float64(0.0), err
+		return 0, err
 	}
 	if littleEndian {
 		u64LE := binary.LittleEndian.Uint64(u64)
