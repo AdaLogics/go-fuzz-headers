@@ -18,9 +18,7 @@ import (
 	securejoin "github.com/cyphar/filepath-securejoin"
 )
 
-var (
-	MaxTotalLen = uint32(2000000)
-)
+var MaxTotalLen uint32 = 2000000
 
 func SetMaxTotalLen(newLen uint32) {
 	MaxTotalLen = newLen
@@ -53,7 +51,6 @@ func (f *ConsumeFuzzer) Split(minCalls, maxCalls int) error {
 	numberOfCalls := int(f.data[0])
 	if numberOfCalls < minCalls || numberOfCalls > maxCalls {
 		return errors.New("Bad number of calls")
-
 	}
 	if len(f.data) < numberOfCalls+numberOfCalls+1 {
 		return errors.New("Length of data does not match required parameters")
@@ -128,6 +125,7 @@ func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
 	verr := doCustom.Call([]reflect.Value{v, reflect.ValueOf(Continue{
 		F: f,
 	})})
+
 	// check if we return an error
 	if verr[0].IsNil() {
 		return nil
@@ -136,7 +134,6 @@ func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
 }
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error {
-
 	// We check if we should check for custom functions
 	if customFunctions {
 		if e.IsValid() {
@@ -155,7 +152,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 							return nil
 						}
 					}*/
-			//return f.setCustom(e)
+			// return f.setCustom(e)
 		}
 	}
 
@@ -177,7 +174,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 					//e.Field(i).Set(reflect.New(e.Field(i).Type()))
 				}*/
 				v = e.Field(i)
-				//v = reflect.New(e.Field(i).Type())
+				// v = reflect.New(e.Field(i).Type())
 				err := f.fuzzStruct(v, customFunctions)
 				if err != nil {
 					return err
@@ -651,12 +648,11 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 	filebody := f.data[byteBegin : byteBegin+length]
 	f.position = byteBegin + length
 	return filebody, nil
-
 }
 
-// Is similar to GetString(), but creates string based on the length
-// of the length of f.data to increase the likelihood of not overflowing
-// f.data
+// getTarFileName is similar to GetString(), but creates string based
+// on the length of f.data to reduce the likelihood of overflowing
+// f.data.
 func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 	if f.position >= uint32(len(f.data)) {
 		return "nil", errors.New("Not enough bytes to create string")
@@ -668,7 +664,7 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 
 	// A bit of optimization to attempt to create a file name
 	// when we don't have as many bytes left as "length"
-	remainingBytes := (uint32(len(f.data)) - f.position)
+	remainingBytes := uint32(len(f.data)) - f.position
 	totalDataLen := uint32(len(f.data))
 	if uint32(len(f.data))-f.position < 50 {
 		if remainingBytes == 0 {
@@ -741,13 +737,12 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 
 		hdr.Name = filename
 		hdr.Size = int64(len(filebody))
-		hdr.Mode = 0600
+		hdr.Mode = 0o600
 
 		err = setTarHeaderFormat(hdr, f)
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
-
 		if err := tw.WriteHeader(hdr); err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
@@ -758,8 +753,8 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 	return returnTarBytes(buf.Bytes())
 }
 
-// Creates pseudo-random files in rootDir.
-// Will create subdirs and place the files there.
+// CreateFiles creates pseudo-random files in rootDir.
+// It creates subdirs and places the files there.
 // It is the callers responsibility to ensure that
 // rootDir exists.
 func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
@@ -779,8 +774,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 		fileName, err := f.GetString()
 		if err != nil {
 			if noOfCreatedFiles > 0 {
-				// If files have been created, we don't return
-				// an error
+				// If files have been created, we don't return an error.
 				break
 			} else {
 				return errors.New("Could not get fileName")
@@ -807,7 +801,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				continue
 			}
 			if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-				err2 := os.MkdirAll(dirPath, 0777)
+				err2 := os.MkdirAll(dirPath, 0o777)
 				if err2 != nil {
 					continue
 				}
@@ -862,9 +856,9 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 	return nil
 }
 
-// Returns a string that can only consists of characters that are
-// included in possibleChars. Will return an error if the created
-// string does not have the specified length
+// GetStringFrom returns a string that can only consist of characters
+// included in possibleChars. It returns an error if the created string
+// does not have the specified length.
 func (f *ConsumeFuzzer) GetStringFrom(possibleChars string, length int) (string, error) {
 	returnString := ""
 	if (uint32(len(f.data)) - f.position) < uint32(length) {
