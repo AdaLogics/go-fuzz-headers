@@ -3,9 +3,25 @@ module github.com/AdaLogics/go-fuzz-headers/container
 go 1.18
 
 require (
-	github.com/AdaLogics/go-fuzz-headers v0.0.0-20220511133513-5ae53b7a8154
+	github.com/AdaLogics/go-fuzz-headers v0.0.0-20221103172237-443f56ff4ba8
 	github.com/google/go-containerregistry v0.7.0
 )
+
+// When developing, use the local code of go-fuzz-headers from main. Be aware
+// that replace rules are not transitive; "the rest of the world" will use the
+// version that's specified above if go-fuzz-headers is only present as an
+// indirect dependency through this module.
+//
+// As this module would unlikely be used on its own (without "go-fuzz-headers"
+// itself as a direct dependency), chances are low that users depend on the
+// version specified above, but ideally CI should test both with (latest version
+// from main) and without (version specified in go.mod) this replace rule to
+// verify that the specified version is compatible.
+//
+// See https://github.com/moby/sys/pull/68 for a similar scenario.
+//
+// TODO(thaJeztah): when setting up CI, test both with and without this replace rule.
+replace github.com/AdaLogics/go-fuzz-headers => ../
 
 require (
 	github.com/containerd/stargz-snapshotter/estargz v0.10.1 // indirect
