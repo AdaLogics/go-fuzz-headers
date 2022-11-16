@@ -89,11 +89,7 @@ func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
 		return errors.New("This interface cannot be set")
 	}*/
 	e := v.Elem()
-	err := f.fuzzStruct(e, false)
-	if err != nil {
-		return err
-	}
-	return nil
+	return f.fuzzStruct(e, false)
 }
 
 func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
@@ -511,11 +507,7 @@ func (f *ConsumeFuzzer) GetBool() (bool, error) {
 }
 
 func (f *ConsumeFuzzer) FuzzMap(m interface{}) error {
-	err := f.GenerateStruct(m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return f.GenerateStruct(m)
 }
 
 func returnTarBytes(buf []byte) ([]byte, error) {
@@ -918,9 +910,5 @@ func (f *ConsumeFuzzer) GetFloat64() (float64, error) {
 }
 
 func (f *ConsumeFuzzer) CreateSlice(targetSlice interface{}) error {
-	err := f.GenerateStruct(targetSlice)
-	if err != nil {
-		return err
-	}
-	return nil
+	return f.GenerateStruct(targetSlice)
 }

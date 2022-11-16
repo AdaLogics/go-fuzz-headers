@@ -41,17 +41,9 @@ func (f *ConsumeFuzzer) GenerateWithCustom(targetStruct interface{}) error {
 }
 
 func (c Continue) GenerateStruct(targetStruct interface{}) error {
-	err := c.F.GenerateStruct(targetStruct)
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.F.GenerateStruct(targetStruct)
 }
 
 func (c Continue) GenerateStructWithCustom(targetStruct interface{}) error {
-	err := c.F.GenerateWithCustom(targetStruct)
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.F.GenerateWithCustom(targetStruct)
 }
