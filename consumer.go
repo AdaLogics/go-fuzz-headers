@@ -810,17 +810,10 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 					return errors.New("could not create the file")
 				}
 			}
-			createdFile, err := os.Create(fullFilePath)
+			err = os.WriteFile(fullFilePath, fileContents, 0o666)
 			if err != nil {
-				createdFile.Close()
 				continue
 			}
-			_, err = createdFile.Write(fileContents)
-			if err != nil {
-				createdFile.Close()
-				continue
-			}
-			createdFile.Close()
 			noOfCreatedFiles++
 		}
 	}
