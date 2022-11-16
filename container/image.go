@@ -176,7 +176,7 @@ func createLayer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 		if err := tw.WriteHeader(&tar.Header{
 			Name:     fileName,
 			Size:     int64(len(randBytes)),
-			Typeflag: tar.TypeRegA,
+			Typeflag: tar.TypeReg,
 		}); err != nil {
 			return nil, err
 		}
