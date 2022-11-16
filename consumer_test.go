@@ -1,7 +1,6 @@
 package gofuzzheaders
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -64,7 +63,6 @@ func TestStruct_fuzzing2(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	fmt.Println("Here")
 	if ts1.Field1 != "ABC" {
 		t.Errorf("ts1.Field1 was %v but should be 'AB'", ts1.Field1)
 	}
