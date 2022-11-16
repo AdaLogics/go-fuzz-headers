@@ -45,11 +45,13 @@ func (ul *uncompressedLayer2) MediaType() (types.MediaType, error) {
 
 var _ partial.UncompressedLayer = (*uncompressedLayer2)(nil)
 
-var counter = 0
-var counter2 = 0
+var (
+	counter  = 0
+	counter2 = 0
+)
 
 func Fuzz(data []byte) int {
-	//fmt.Println(counter)
+	// fmt.Println(counter)
 	f := fuzz.NewConsumer(data)
 	img, err := Image(f)
 	if err != nil {
@@ -68,7 +70,7 @@ func Fuzz(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	//fmt.Printf("%+v\n", img)
+	// fmt.Printf("%+v\n", img)
 	/*if counter!=200 {
 		defer os.Remove(fp.Name())
 	}*/
@@ -136,7 +138,7 @@ func Image(f *fuzz.ConsumeFuzzer) (v1.Image, error) {
 
 // Layer returns a layer with pseudo-randomly generated content.
 func Layer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
-	//fileName := fmt.Sprintf("random_file_%d.txt", mrand.Int())
+	// fileName := fmt.Sprintf("random_file_%d.txt", mrand.Int())
 
 	// Hash the contents as we write it out to the buffer.
 	var b bytes.Buffer

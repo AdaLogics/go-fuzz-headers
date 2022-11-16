@@ -12,13 +12,15 @@ type TestStruct1 struct {
 }
 
 func TestStruct_fuzzing1(t *testing.T) {
-	data := []byte{0x00, 0x00, 0x00, 0x03, // Length field 1 (= 3)
+	data := []byte{
+		0x00, 0x00, 0x00, 0x03, // Length field 1 (= 3)
 		0x41, 0x42, 0x43,
 		0x00, 0x00, 0x00, 0x03, // Length field 2 (= 3)
 		0x41, 0x42, 0x43,
 		0x01, 0x01, 0x01, 0x03, // Length slice (= 1)
 		0x02, // endian bool (I think)
-		0x41} // Field3
+		0x41, // Field3
+	}
 
 	ts1 := TestStruct1{}
 	fuzz1 := NewConsumer(data)
@@ -39,7 +41,8 @@ func TestStruct_fuzzing1(t *testing.T) {
 
 // Tests that we can create long byte slices in structs
 func TestStruct_fuzzing2(t *testing.T) {
-	data := []byte{0x00, 0x00, 0x00, 0x03, // Length field 1 (= 3)
+	data := []byte{
+		0x00, 0x00, 0x00, 0x03, // Length field 1 (= 3)
 		0x41, 0x42, 0x43, // Content of Field3
 		0x00, 0x00, 0x00, 0x03, // Length field 2 (= 3)
 		0x41, 0x42, 0x43, // Content of Field2

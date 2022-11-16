@@ -27,8 +27,10 @@ type TestStructFuncs4 struct {
 }
 
 func TestStruct_fuzzing_CustomFuncs1(t *testing.T) {
-	data := []byte{0x02, 0x41, 0x42, // Field1
-		0x03, 0x41, 0x42, 0x43} // Field2
+	data := []byte{
+		0x02, 0x41, 0x42, // Field1
+		0x03, 0x41, 0x42, 0x43, // Field2
+	}
 
 	ts1 := TestStructFuncs3{}
 	fuzz1 := NewConsumer(data)
@@ -47,7 +49,6 @@ func TestStruct_fuzzing_CustomFuncs1(t *testing.T) {
 	if ts1.Field2 != "ABC" {
 		t.Errorf("ts1.Field1 was %v but should be 'ABC'", ts1.Field1)
 	}
-
 }
 
 func testFuncs() []interface{} {
@@ -62,4 +63,5 @@ func testFuncs() []interface{} {
 			return nil
 		},
 	}
-}*/
+}
+*/

@@ -44,15 +44,19 @@ func (ul *uncompressedLayer) MediaType() (types.MediaType, error) {
 
 var _ partial.UncompressedLayer = (*uncompressedLayer)(nil)
 
-var layerTypes = []types.MediaType{types.DockerLayer, types.DockerUncompressedLayer,
+var layerTypes = []types.MediaType{
+	types.DockerLayer, types.DockerUncompressedLayer,
 	types.OCIRestrictedLayer, types.OCIUncompressedLayer,
-	types.OCIUncompressedRestrictedLayer, types.OCILayer}
+	types.OCIUncompressedRestrictedLayer, types.OCILayer,
+}
 
-// Gets valid bytes for a container image in .tar format.
-// This is the API that users will interact with.
+// GetImageBytes gets valid bytes for a container image in .tar format.
+// This is the API that users interact with.
+//
 // Usage:
-// f := NewConsumer(data)
-// imagebytes, err := f.GetImageBytes()
+//
+//	f := NewConsumer(data)
+//	imageBytes, err := f.GetImageBytes()
 func GetImageBytes(f *fuzz.ConsumeFuzzer) ([]byte, error) {
 	img, err := createImage(f)
 	if err != nil {

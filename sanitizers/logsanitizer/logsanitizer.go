@@ -14,7 +14,7 @@ type Sanitizer struct {
 	logfile             string
 	stringsToCheck      []string
 	checkInsecureString bool
-	fp 					*os.File
+	fp                  *os.File
 }
 
 func NewSanitizer() *Sanitizer {
@@ -24,7 +24,7 @@ func NewSanitizer() *Sanitizer {
 	return s
 }
 
-// Takes the path to the logfile
+// SetLogFile sets the path to the logfile.
 func (s *Sanitizer) SetLogFile(logFile string) {
 	s.logfile = logFile
 }
@@ -152,8 +152,9 @@ func createErr(line string) string {
 	return b.String()
 }
 
-// Sets up logSAN for Logrus
-// Returns the sanitizer, a file pointer and an error.
+// SetupLogSANForLogrus configures Logrus to use the given filename for
+// outputting, and returns a Sanitizer configured with the given file.
+// It returns an error when failing to create the output file.
 func SetupLogSANForLogrus(logFileAbs string) (*Sanitizer, error) {
 	logFile, err := os.Create(logFileAbs)
 	if err != nil {
