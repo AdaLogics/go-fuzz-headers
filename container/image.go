@@ -62,8 +62,8 @@ func GetImageBytes(f *fuzz.ConsumeFuzzer) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	runes := "abcdefghijklmnopqrstuvwxyz0123456789_-.ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+	const runes = "abcdefghijklmnopqrstuvwxyz0123456789_-.ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	tagNameString, err := f.GetStringFrom(runes, 126)
 	if err != nil {
 		return []byte{}, err
