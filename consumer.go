@@ -39,9 +39,10 @@ func IsDivisibleBy(n int, divisibleby int) bool {
 }
 
 func NewConsumer(fuzzData []byte) *ConsumeFuzzer {
-	fuzzMap := make(map[reflect.Type]reflect.Value)
-	f := &ConsumeFuzzer{data: fuzzData, position: 0, Funcs: fuzzMap}
-	return f
+	return &ConsumeFuzzer{
+		data:  fuzzData,
+		Funcs: make(map[reflect.Type]reflect.Value),
+	}
 }
 
 func (f *ConsumeFuzzer) Split(minCalls, maxCalls int) error {
@@ -343,7 +344,7 @@ func (f *ConsumeFuzzer) GetStringArray() (reflect.Value, error) {
 		stringToAppend := string(f.data[f.position : f.position+stringSize])
 		strVal := reflect.ValueOf(stringToAppend)
 		stringArray = reflect.Append(stringArray, strVal)
-		f.position = f.position + stringSize
+		f.position += stringSize
 	}
 	return stringArray, nil
 }
@@ -365,7 +366,7 @@ func (f *ConsumeFuzzer) GetByte() (byte, error) {
 		return 0x00, errors.New("not enough bytes to get byte")
 	}
 	returnByte := f.data[f.position]
-	f.position += 1
+	f.position++
 	return returnByte, nil
 }
 
@@ -397,11 +398,9 @@ func (f *ConsumeFuzzer) GetUint16() (uint16, error) {
 		return 0, err
 	}
 	if littleEndian {
-		u16LE := binary.LittleEndian.Uint16(u16)
-		return u16LE, nil
+		return binary.LittleEndian.Uint16(u16), nil
 	}
-	u16BE := binary.BigEndian.Uint16(u16)
-	return u16BE, nil
+	return binary.BigEndian.Uint16(u16), nil
 }
 
 func (f *ConsumeFuzzer) GetUint32() (uint32, error) {
@@ -414,11 +413,9 @@ func (f *ConsumeFuzzer) GetUint32() (uint32, error) {
 		return 0, err
 	}
 	if littleEndian {
-		u32LE := binary.LittleEndian.Uint32(u32)
-		return u32LE, nil
+		return binary.LittleEndian.Uint32(u32), nil
 	}
-	u32BE := binary.BigEndian.Uint32(u32)
-	return u32BE, nil
+	return binary.BigEndian.Uint32(u32), nil
 }
 
 func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
@@ -431,11 +428,9 @@ func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
 		return 0, err
 	}
 	if littleEndian {
-		u64LE := binary.LittleEndian.Uint64(u64)
-		return u64LE, nil
+		return binary.LittleEndian.Uint64(u64), nil
 	}
-	u64BE := binary.BigEndian.Uint64(u64)
-	return u64BE, nil
+	return binary.BigEndian.Uint64(u64), nil
 }
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
@@ -462,9 +457,8 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if byteBegin+length < byteBegin {
 		return nil, errors.New("numbers overflow")
 	}
-	b := f.data[byteBegin : byteBegin+length]
 	f.position = byteBegin + length
-	return b, nil
+	return f.data[byteBegin:f.position], nil
 }
 
 func (f *ConsumeFuzzer) GetString() (string, error) {
@@ -488,9 +482,8 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 	if byteBegin > byteBegin+length {
 		return "nil", errors.New("numbers overflow")
 	}
-	str := string(f.data[byteBegin : byteBegin+length])
 	f.position = byteBegin + length
-	return str, nil
+	return string(f.data[byteBegin:f.position]), nil
 }
 
 func (f *ConsumeFuzzer) GetBool() (bool, error) {
@@ -511,12 +504,9 @@ func (f *ConsumeFuzzer) FuzzMap(m interface{}) error {
 }
 
 func returnTarBytes(buf []byte) ([]byte, error) {
-	reader := bytes.NewReader(buf)
-	tr := tar.NewReader(reader)
-
 	// Count files
 	var fileCounter int
-	fileCounter = 0
+	tr := tar.NewReader(bytes.NewReader(buf))
 	for {
 		_, err := tr.Next()
 		if err == io.EOF {
@@ -637,9 +627,8 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 	if byteBegin+length < byteBegin {
 		return nil, errors.New("numbers overflow")
 	}
-	filebody := f.data[byteBegin : byteBegin+length]
 	f.position = byteBegin + length
-	return filebody, nil
+	return f.data[byteBegin:f.position], nil
 }
 
 // getTarFileName is similar to GetString(), but creates string based
@@ -682,9 +671,8 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 	if byteBegin > byteBegin+length {
 		return "nil", errors.New("numbers overflow")
 	}
-	str := string(f.data[byteBegin : byteBegin+length])
 	f.position = byteBegin + length
-	return str, nil
+	return string(f.data[byteBegin:f.position]), nil
 }
 
 // TarBytes returns valid bytes for a tar archive
@@ -750,8 +738,6 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 // It is the callers responsibility to ensure that
 // rootDir exists.
 func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
-	var noOfCreatedFiles int
-	noOfCreatedFiles = 0
 	numberOfFiles, err := f.GetInt()
 	if err != nil {
 		return err
@@ -761,6 +747,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 		return errors.New("maxNumberOfFiles is nil")
 	}
 
+	var noOfCreatedFiles int
 	for i := 0; i < maxNumberOfFiles; i++ {
 		// The file to create:
 		fileName, err := f.GetString()
@@ -772,8 +759,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				return errors.New("could not get fileName")
 			}
 		}
-		var fullFilePath string
-		fullFilePath, err = securejoin.SecureJoin(rootDir, fileName)
+		fullFilePath, err := securejoin.SecureJoin(rootDir, fileName)
 		if err != nil {
 			return err
 		}
@@ -852,10 +838,10 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 // included in possibleChars. It returns an error if the created string
 // does not have the specified length.
 func (f *ConsumeFuzzer) GetStringFrom(possibleChars string, length int) (string, error) {
-	returnString := ""
 	if (uint32(len(f.data)) - f.position) < uint32(length) {
-		return returnString, errors.New("not enough bytes to create a string")
+		return "", errors.New("not enough bytes to create a string")
 	}
+	returnString := ""
 	for i := 0; i < length; i++ {
 		charIndex, err := f.GetInt()
 		if err != nil {
