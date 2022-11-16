@@ -48,9 +48,14 @@ func (s *Sanitizer) CheckLogfile() {
 	if err != nil {
 		panic(err)
 	}
-	defer logFile.Close()
-	defer os.Remove(s.logfile)
+	defer func() {
+		_ = logFile.Close()
+		_ = os.Remove(s.logfile)
+	}()
 
+	// TODO(thaJeztah): This could be replaced by bufio.NewScanner(s.logfile)
+	//  but taking into account that a bufio.Scanner has a limit of 64k per
+	//  line, which could be an issue when using this for fuzzed logfiles.
 	rd := bufio.NewReader(logFile)
 
 	for {
