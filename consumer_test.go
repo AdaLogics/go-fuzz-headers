@@ -2,9 +2,6 @@ package gofuzzheaders
 
 import (
 	"fmt"
-	//"os"
-	//"path/filepath"
-	//"reflect"
 	"testing"
 )
 

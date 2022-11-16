@@ -1,14 +1,13 @@
 package examples
 
 import (
-	"io/ioutil"
 	"os"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func FuzzCreateFiles(data []byte) int {
-	tmpDir, err := ioutil.TempDir("dir", "prefix")
+	tmpDir, err := os.MkdirTemp("dir", "prefix")
 	if err != nil {
 		return 0
 	}
