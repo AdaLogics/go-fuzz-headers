@@ -163,8 +163,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 				if f.fuzzUnexportedFields {
 					v = reflect.NewAt(e.Field(i).Type(), unsafe.Pointer(e.Field(i).UnsafeAddr())).Elem()
 				}
-				err := f.fuzzStruct(v, customFunctions)
-				if err != nil {
+				if err := f.fuzzStruct(v, customFunctions); err != nil {
 					return err
 				}
 			} else {
@@ -174,8 +173,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 				}*/
 				v = e.Field(i)
 				// v = reflect.New(e.Field(i).Type())
-				err := f.fuzzStruct(v, customFunctions)
-				if err != nil {
+				if err := f.fuzzStruct(v, customFunctions); err != nil {
 					return err
 				}
 				/*if e.Field(i).CanSet() {
@@ -212,9 +210,8 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 		uu := reflect.MakeSlice(e.Type(), int(numOfElements), int(numOfElements))
 
 		for i := 0; i < int(numOfElements); i++ {
-			err := f.fuzzStruct(uu.Index(i), customFunctions)
 			// If we have more than 10, then we can proceed with that.
-			if err != nil {
+			if err := f.fuzzStruct(uu.Index(i), customFunctions); err != nil {
 				if i >= 10 {
 					if e.CanSet() {
 						e.Set(uu)
@@ -287,13 +284,11 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 			numOfElements := randQty % maxElements
 			for i := 0; i < numOfElements; i++ {
 				key := reflect.New(e.Type().Key()).Elem()
-				err := f.fuzzStruct(key, customFunctions)
-				if err != nil {
+				if err := f.fuzzStruct(key, customFunctions); err != nil {
 					return err
 				}
 				val := reflect.New(e.Type().Elem()).Elem()
-				err = f.fuzzStruct(val, customFunctions)
-				if err != nil {
+				if err = f.fuzzStruct(val, customFunctions); err != nil {
 					return err
 				}
 				e.SetMapIndex(key, val)
@@ -302,8 +297,7 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 	case reflect.Ptr:
 		if e.CanSet() {
 			e.Set(reflect.New(e.Type().Elem()))
-			err := f.fuzzStruct(e.Elem(), customFunctions)
-			if err != nil {
+			if err := f.fuzzStruct(e.Elem(), customFunctions); err != nil {
 				return err
 			}
 			return nil
@@ -330,15 +324,13 @@ func (f *ConsumeFuzzer) GetStringArray() (reflect.Value, error) {
 	if arraySize > max {
 		arraySize = max
 	}
-	elemType := reflect.TypeOf("string")
-	stringArray := reflect.MakeSlice(reflect.SliceOf(elemType), int(arraySize), int(arraySize))
+	stringArray := reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf("string")), int(arraySize), int(arraySize))
 	if f.position+arraySize >= f.dataTotal {
 		return stringArray, errors.New("could not make string array")
 	}
 
 	for i := 0; i < int(arraySize); i++ {
 		stringSize := uint32(f.data[f.position])
-
 		if f.position+stringSize >= f.dataTotal {
 			return stringArray, nil
 		}
@@ -369,14 +361,14 @@ func (f *ConsumeFuzzer) GetByte() (byte, error) {
 }
 
 func (f *ConsumeFuzzer) GetNBytes(numberOfBytes int) ([]byte, error) {
-	returnBytes := make([]byte, 0)
 	if f.position >= f.dataTotal {
-		return returnBytes, errors.New("not enough bytes to get byte")
+		return nil, errors.New("not enough bytes to get byte")
 	}
+	returnBytes := make([]byte, 0, numberOfBytes)
 	for i := 0; i < numberOfBytes; i++ {
 		newByte, err := f.GetByte()
 		if err != nil {
-			return returnBytes, err
+			return nil, err
 		}
 		returnBytes = append(returnBytes, newByte)
 	}
@@ -689,31 +681,25 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
-		hdr := &tar.Header{}
-
-		err = setTarHeaderTypeflag(hdr, f)
-		if err != nil {
-			return returnTarBytes(buf.Bytes())
-		}
-
 		sec, err := f.GetInt()
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
-
 		nsec, err := f.GetInt()
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
 
-		hdr.ModTime = time.Unix(int64(sec), int64(nsec))
-
-		hdr.Name = filename
-		hdr.Size = int64(len(filebody))
-		hdr.Mode = 0o600
-
-		err = setTarHeaderFormat(hdr, f)
-		if err != nil {
+		hdr := &tar.Header{
+			Name:    filename,
+			Size:    int64(len(filebody)),
+			Mode:    0o600,
+			ModTime: time.Unix(int64(sec), int64(nsec)),
+		}
+		if err := setTarHeaderTypeflag(hdr, f); err != nil {
+			return returnTarBytes(buf.Bytes())
+		}
+		if err := setTarHeaderFormat(hdr, f); err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -758,11 +744,8 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 		}
 
 		// Find the subdirectory of the file
-		subDir := filepath.Dir(fileName)
-		if subDir != "" && subDir != "." {
-			// create the dir first
-
-			// Avoid going outside the root dir
+		if subDir := filepath.Dir(fileName); subDir != "" && subDir != "." {
+			// create the dir first; avoid going outside the root dir
 			if strings.Contains(subDir, "../") || (len(subDir) > 0 && subDir[0] == 47) || strings.Contains(subDir, "\\") {
 				continue
 			}

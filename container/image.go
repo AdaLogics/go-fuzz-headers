@@ -139,11 +139,6 @@ func getLayerType(f *fuzz.ConsumeFuzzer) (types.MediaType, error) {
 
 // createLayer returns a layer with pseudo-randomly generated content.
 func createLayer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
-	// Hash the contents as we write it out to the buffer.
-	var b bytes.Buffer
-	hasher := sha256.New()
-	mw := io.MultiWriter(&b, hasher)
-
 	// write random files
 	noOfFiles, err := f.GetInt()
 	if err != nil {
@@ -153,6 +148,11 @@ func createLayer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
 	if noOfFiles == 0 {
 		return nil, fmt.Errorf("no files to be created")
 	}
+
+	// Hash the contents as we write it out to the buffer.
+	var b bytes.Buffer
+	hasher := sha256.New()
+	mw := io.MultiWriter(&b, hasher)
 	for i := 0; i < noOfFiles; i++ {
 		// Write a single file with a random name and random contents.
 		fileName, err := f.GetString()

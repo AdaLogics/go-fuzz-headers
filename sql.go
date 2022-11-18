@@ -291,8 +291,6 @@ var alter_table_options = []string{
 // in that it has its own function. The majority of statements
 // are created by 'createStmt()'.
 func createAlterTableStmt(f *ConsumeFuzzer) (string, error) {
-	var stmt strings.Builder
-	stmt.WriteString("ALTER TABLE ")
 	maxArgs, err := f.GetInt()
 	if err != nil {
 		return "", err
@@ -301,6 +299,9 @@ func createAlterTableStmt(f *ConsumeFuzzer) (string, error) {
 	if maxArgs == 0 {
 		return "", fmt.Errorf("could not create alter table stmt")
 	}
+
+	var stmt strings.Builder
+	stmt.WriteString("ALTER TABLE ")
 	for i := 0; i < maxArgs; i++ {
 		// Calculate if we get existing token or custom string
 		tokenType, err := f.GetInt()
