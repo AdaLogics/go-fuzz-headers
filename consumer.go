@@ -547,9 +547,6 @@ func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
 }
 
 func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
-	if f.position >= f.dataTotal {
-		return nil, errors.New("not enough bytes to create byte array")
-	}
 	length, err := f.GetUint32()
 	if err != nil {
 		return nil, errors.New("not enough bytes to create byte array")
@@ -558,15 +555,12 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 	// A bit of optimization to attempt to create a file body
 	// when we don't have as many bytes left as "length"
 	remainingBytes := f.dataTotal - f.position
-	if f.dataTotal-f.position < 50 {
-		if remainingBytes == 0 {
-			return nil, errors.New("created too large a string")
-		}
+	if remainingBytes == 0 {
+		return nil, errors.New("created too large a string")
+	}
+	if remainingBytes < 50 {
 		length = length % remainingBytes
 	} else if f.dataTotal < 500 {
-		if f.dataTotal == 0 {
-			return nil, errors.New("created too large a string")
-		}
 		length = length % f.dataTotal
 	}
 	if f.position+length > MaxTotalLen {
@@ -593,9 +587,6 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 // on the length of f.data to reduce the likelihood of overflowing
 // f.data.
 func (f *ConsumeFuzzer) getTarFilename() (string, error) {
-	if f.position >= f.dataTotal {
-		return "nil", errors.New("not enough bytes to create string")
-	}
 	length, err := f.GetUint32()
 	if err != nil {
 		return "nil", errors.New("not enough bytes to create string")
@@ -604,15 +595,12 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 	// A bit of optimization to attempt to create a file name
 	// when we don't have as many bytes left as "length"
 	remainingBytes := f.dataTotal - f.position
-	if f.dataTotal-f.position < 50 {
-		if remainingBytes == 0 {
-			return "nil", errors.New("created too large a string")
-		}
+	if remainingBytes == 0 {
+		return "nil", errors.New("created too large a string")
+	}
+	if remainingBytes < 50 {
 		length = length % remainingBytes
 	} else if f.dataTotal < 500 {
-		if f.dataTotal == 0 {
-			return "nil", errors.New("created too large a string")
-		}
 		length = length % f.dataTotal
 	}
 	if f.position > MaxTotalLen {
