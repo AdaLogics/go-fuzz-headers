@@ -26,6 +26,7 @@ func SetMaxTotalLen(newLen uint32) {
 
 type ConsumeFuzzer struct {
 	data                 []byte
+	dataTotal            uint32
 	CommandPart          []byte
 	RestOfArray          []byte
 	NumberOfCalls        int
@@ -40,20 +41,21 @@ func IsDivisibleBy(n int, divisibleby int) bool {
 
 func NewConsumer(fuzzData []byte) *ConsumeFuzzer {
 	return &ConsumeFuzzer{
-		data:  fuzzData,
-		Funcs: make(map[reflect.Type]reflect.Value),
+		data:      fuzzData,
+		dataTotal: uint32(len(fuzzData)),
+		Funcs:     make(map[reflect.Type]reflect.Value),
 	}
 }
 
 func (f *ConsumeFuzzer) Split(minCalls, maxCalls int) error {
-	if len(f.data) == 0 {
+	if f.dataTotal == 0 {
 		return errors.New("could not split")
 	}
 	numberOfCalls := int(f.data[0])
 	if numberOfCalls < minCalls || numberOfCalls > maxCalls {
 		return errors.New("bad number of calls")
 	}
-	if len(f.data) < numberOfCalls+numberOfCalls+1 {
+	if int(f.dataTotal) < numberOfCalls+numberOfCalls+1 {
 		return errors.New("length of data does not match required parameters")
 	}
 
@@ -202,10 +204,9 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 		if err != nil {
 			return err
 		}
-		var numOfElements uint32
-		numOfElements = randQty % maxElements
-		if (uint32(len(f.data)) - f.position) < numOfElements {
-			numOfElements = uint32(len(f.data)) - f.position
+		numOfElements := randQty % maxElements
+		if (f.dataTotal - f.position) < numOfElements {
+			numOfElements = f.dataTotal - f.position
 		}
 
 		uu := reflect.MakeSlice(e.Type(), int(numOfElements), int(numOfElements))
@@ -331,14 +332,14 @@ func (f *ConsumeFuzzer) GetStringArray() (reflect.Value, error) {
 	}
 	elemType := reflect.TypeOf("string")
 	stringArray := reflect.MakeSlice(reflect.SliceOf(elemType), int(arraySize), int(arraySize))
-	if f.position+arraySize >= uint32(len(f.data)) {
+	if f.position+arraySize >= f.dataTotal {
 		return stringArray, errors.New("could not make string array")
 	}
 
 	for i := 0; i < int(arraySize); i++ {
 		stringSize := uint32(f.data[f.position])
 
-		if f.position+stringSize >= uint32(len(f.data)) {
+		if f.position+stringSize >= f.dataTotal {
 			return stringArray, nil
 		}
 		stringToAppend := string(f.data[f.position : f.position+stringSize])
@@ -350,7 +351,7 @@ func (f *ConsumeFuzzer) GetStringArray() (reflect.Value, error) {
 }
 
 func (f *ConsumeFuzzer) GetInt() (int, error) {
-	if f.position >= uint32(len(f.data)) {
+	if f.position >= f.dataTotal {
 		return 0, errors.New("not enough bytes to create int")
 	}
 	returnInt := int(f.data[f.position])
@@ -359,10 +360,7 @@ func (f *ConsumeFuzzer) GetInt() (int, error) {
 }
 
 func (f *ConsumeFuzzer) GetByte() (byte, error) {
-	if len(f.data) == 0 {
-		return 0x00, errors.New("not enough bytes to get byte")
-	}
-	if f.position >= uint32(len(f.data)) {
+	if f.position >= f.dataTotal {
 		return 0x00, errors.New("not enough bytes to get byte")
 	}
 	returnByte := f.data[f.position]
@@ -372,10 +370,7 @@ func (f *ConsumeFuzzer) GetByte() (byte, error) {
 
 func (f *ConsumeFuzzer) GetNBytes(numberOfBytes int) ([]byte, error) {
 	returnBytes := make([]byte, 0)
-	if len(f.data) == 0 {
-		return returnBytes, errors.New("not enough bytes to get byte")
-	}
-	if f.position >= uint32(len(f.data)) {
+	if f.position >= f.dataTotal {
 		return returnBytes, errors.New("not enough bytes to get byte")
 	}
 	for i := 0; i < numberOfBytes; i++ {
@@ -434,7 +429,7 @@ func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
 }
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
-	if len(f.data) == 0 || f.position >= uint32(len(f.data)) {
+	if f.position >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 	length, err := f.GetUint32()
@@ -445,13 +440,13 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 		return nil, errors.New("created too large a string")
 	}
 	byteBegin := f.position - 1
-	if byteBegin >= uint32(len(f.data)) {
+	if byteBegin >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 	if length == 0 {
 		return nil, errors.New("zero-length is not supported")
 	}
-	if byteBegin+length >= uint32(len(f.data)) {
+	if byteBegin+length >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 	if byteBegin+length < byteBegin {
@@ -462,7 +457,7 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 }
 
 func (f *ConsumeFuzzer) GetString() (string, error) {
-	if f.position >= uint32(len(f.data)) {
+	if f.position >= f.dataTotal {
 		return "nil", errors.New("not enough bytes to create string")
 	}
 	length, err := f.GetUint32()
@@ -473,10 +468,10 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 		return "nil", errors.New("created too large a string")
 	}
 	byteBegin := f.position - 1
-	if byteBegin >= uint32(len(f.data)) {
+	if byteBegin >= f.dataTotal {
 		return "nil", errors.New("not enough bytes to create string")
 	}
-	if byteBegin+length > uint32(len(f.data)) {
+	if byteBegin+length > f.dataTotal {
 		return "nil", errors.New("not enough bytes to create string")
 	}
 	if byteBegin > byteBegin+length {
@@ -487,7 +482,7 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 }
 
 func (f *ConsumeFuzzer) GetBool() (bool, error) {
-	if f.position >= uint32(len(f.data)) {
+	if f.position >= f.dataTotal {
 		return false, errors.New("not enough bytes to create bool")
 	}
 	if IsDivisibleBy(int(f.data[f.position]), 2) {
@@ -588,7 +583,7 @@ func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
 }
 
 func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
-	if len(f.data) == 0 || f.position >= uint32(len(f.data)) {
+	if f.position >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 	length, err := f.GetUint32()
@@ -598,30 +593,29 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 
 	// A bit of optimization to attempt to create a file body
 	// when we don't have as many bytes left as "length"
-	remainingBytes := (uint32(len(f.data)) - f.position)
-	totalDataLen := uint32(len(f.data))
-	if uint32(len(f.data))-f.position < 50 {
+	remainingBytes := f.dataTotal - f.position
+	if f.dataTotal-f.position < 50 {
 		if remainingBytes == 0 {
 			return nil, errors.New("created too large a string")
 		}
 		length = length % remainingBytes
-	} else if len(f.data) < 500 {
-		if totalDataLen == 0 {
+	} else if f.dataTotal < 500 {
+		if f.dataTotal == 0 {
 			return nil, errors.New("created too large a string")
 		}
-		length = length % totalDataLen
+		length = length % f.dataTotal
 	}
 	if f.position+length > MaxTotalLen {
 		return nil, errors.New("created too large a string")
 	}
 	byteBegin := f.position - 1
-	if byteBegin >= uint32(len(f.data)) {
+	if byteBegin >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 	if length == 0 {
 		return nil, errors.New("zero-length is not supported")
 	}
-	if byteBegin+length >= uint32(len(f.data)) {
+	if byteBegin+length >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 	if byteBegin+length < byteBegin {
@@ -635,7 +629,7 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 // on the length of f.data to reduce the likelihood of overflowing
 // f.data.
 func (f *ConsumeFuzzer) getTarFilename() (string, error) {
-	if f.position >= uint32(len(f.data)) {
+	if f.position >= f.dataTotal {
 		return "nil", errors.New("not enough bytes to create string")
 	}
 	length, err := f.GetUint32()
@@ -645,27 +639,26 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 
 	// A bit of optimization to attempt to create a file name
 	// when we don't have as many bytes left as "length"
-	remainingBytes := uint32(len(f.data)) - f.position
-	totalDataLen := uint32(len(f.data))
-	if uint32(len(f.data))-f.position < 50 {
+	remainingBytes := f.dataTotal - f.position
+	if f.dataTotal-f.position < 50 {
 		if remainingBytes == 0 {
 			return "nil", errors.New("created too large a string")
 		}
 		length = length % remainingBytes
-	} else if len(f.data) < 500 {
-		if totalDataLen == 0 {
+	} else if f.dataTotal < 500 {
+		if f.dataTotal == 0 {
 			return "nil", errors.New("created too large a string")
 		}
-		length = length % totalDataLen
+		length = length % f.dataTotal
 	}
 	if f.position > MaxTotalLen {
 		return "nil", errors.New("created too large a string")
 	}
 	byteBegin := f.position - 1
-	if byteBegin >= uint32(len(f.data)) {
+	if byteBegin >= f.dataTotal {
 		return "nil", errors.New("not enough bytes to create string")
 	}
-	if byteBegin+length > uint32(len(f.data)) {
+	if byteBegin+length > f.dataTotal {
 		return "nil", errors.New("not enough bytes to create string")
 	}
 	if byteBegin > byteBegin+length {
@@ -838,7 +831,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 // included in possibleChars. It returns an error if the created string
 // does not have the specified length.
 func (f *ConsumeFuzzer) GetStringFrom(possibleChars string, length int) (string, error) {
-	if (uint32(len(f.data)) - f.position) < uint32(length) {
+	if (f.dataTotal - f.position) < uint32(length) {
 		return "", errors.New("not enough bytes to create a string")
 	}
 	returnString := ""
