@@ -334,7 +334,7 @@ func chooseToken(tokens []string, f *ConsumeFuzzer) (string, error) {
 		return "", err
 	}
 	var token strings.Builder
-	token.WriteString(fmt.Sprintf(" %s", tokens[index%len(tokens)]))
+	token.WriteString(tokens[index%len(tokens)])
 	if token.String() == "CUSTOM_FUZZ_STRING" {
 		customFuzzString, err := f.GetString()
 		if err != nil {
