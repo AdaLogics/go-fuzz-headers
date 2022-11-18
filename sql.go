@@ -316,13 +316,13 @@ func createAlterTableStmt(f *ConsumeFuzzer) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			stmt.WriteString(fmt.Sprintf(" %s", customString))
+			stmt.WriteString(" " + customString)
 		} else {
 			tokenIndex, err := f.GetInt()
 			if err != nil {
 				return "", err
 			}
-			stmt.WriteString(fmt.Sprintf(" %s", alter_table_options[tokenIndex%len(alter_table_options)]))
+			stmt.WriteString(" " + alter_table_options[tokenIndex%len(alter_table_options)])
 		}
 	}
 	return stmt.String(), nil
@@ -349,7 +349,7 @@ func chooseToken(tokens []string, f *ConsumeFuzzer) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		token.WriteString(fmt.Sprintf(" %s", customFuzzString))
+		token.WriteString(" " + customFuzzString)
 	}
 	return token.String(), nil
 }
@@ -416,7 +416,7 @@ func createStmt(f *ConsumeFuzzer) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	query.WriteString(fmt.Sprintf(" %s", queryArgs))
+	query.WriteString(" " + queryArgs)
 	return query.String(), nil
 }
 
@@ -445,7 +445,7 @@ func createStmtArgs(tokenslice [][]string, f *ConsumeFuzzer) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			query.WriteString(fmt.Sprintf(" %s", chosenToken))
+			query.WriteString(" " + chosenToken)
 		} else {
 			token.WriteString(tokens[0])
 
@@ -456,7 +456,7 @@ func createStmtArgs(tokenslice [][]string, f *ConsumeFuzzer) (string, error) {
 				if err != nil {
 					return "", err
 				}
-				query.WriteString(fmt.Sprintf(" %s", customFuzzString))
+				query.WriteString(" " + customFuzzString)
 				continue
 			}
 
@@ -500,13 +500,13 @@ func createQuery(f *ConsumeFuzzer) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			query.WriteString(fmt.Sprintf(" %s", keyword))
+			query.WriteString(" " + keyword)
 		} else {
 			customString, err := f.GetString()
 			if err != nil {
 				return "", err
 			}
-			query.WriteString(fmt.Sprintf(" %s", customString))
+			query.WriteString(" " + customString)
 		}
 	}
 	if query.String() == "" {
