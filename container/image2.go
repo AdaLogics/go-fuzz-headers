@@ -51,29 +51,17 @@ var (
 )
 
 func Fuzz(data []byte) int {
-	// fmt.Println(counter)
 	f := fuzz.NewConsumer(data)
 	img, err := Image(f)
 	if err != nil {
 		return 0
 	}
 	counter++
-	/*if counter<5000 {
-		return 1
-	}*/
 	const runes = "abcdefghijklmnopqrstuvwxyz0123456789_-.ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	tagNameString, err := f.GetStringFrom(runes, 126)
-	/*if utf8.RuneCountInString(tagNameString)!=0 {
-		fmt.Println(utf8.RuneCountInString(tagNameString))
-		panic(tagNameString)
-	}*/
 	if err != nil {
 		return 0
 	}
-	// fmt.Printf("%+v\n", img)
-	/*if counter!=200 {
-		defer os.Remove(fp.Name())
-	}*/
 	tag, err := name.NewTag(tagNameString)
 	if err != nil {
 		return 0
@@ -133,8 +121,6 @@ func Image(f *fuzz.ConsumeFuzzer) (v1.Image, error) {
 
 // Layer returns a layer with pseudo-randomly generated content.
 func Layer(f *fuzz.ConsumeFuzzer, mt types.MediaType) (v1.Layer, error) {
-	// fileName := fmt.Sprintf("random_file_%d.txt", mrand.Int())
-
 	// Hash the contents as we write it out to the buffer.
 	var b bytes.Buffer
 	hasher := sha256.New()
