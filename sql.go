@@ -192,6 +192,8 @@ var createTokens = [][]string{
 	{"CUSTOM_FUZZ_STRING"},
 }
 
+/*
+// For future use.
 var updateTokens = [][]string{
 	{"LOW_PRIORITY"},
 	{"IGNORE"},
@@ -200,6 +202,7 @@ var updateTokens = [][]string{
 	{"ORDER BY"},
 	{"LIMIT"},
 }
+*/
 
 var replaceTokens = [][]string{
 	{"LOW_PRIORITY", "DELAYED"},

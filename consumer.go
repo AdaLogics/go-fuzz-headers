@@ -87,11 +87,7 @@ func (f *ConsumeFuzzer) DisallowUnexportedFields() {
 }
 
 func (f *ConsumeFuzzer) GenerateStruct(targetStruct interface{}) error {
-	v := reflect.ValueOf(targetStruct)
-	/*if !v.CanSet() {
-		return errors.New("This interface cannot be set")
-	}*/
-	e := v.Elem()
+	e := reflect.ValueOf(targetStruct).Elem()
 	return f.fuzzStruct(e, false)
 }
 
@@ -134,24 +130,10 @@ func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error {
 	// We check if we should check for custom functions
-	if customFunctions {
-		if e.IsValid() {
-			if e.CanAddr() {
-				err := f.setCustom(e.Addr())
-				if err == nil {
-					return nil
-				}
-			}
-			/*	return f.setCustom(e)
-				_, ok := f.Funcs[e.Type()]
-				if ok {
-					if e.CanAddr() {
-						err := f.setCustom(e.Addr())
-						if err == nil {
-							return nil
-						}
-					}*/
-			// return f.setCustom(e)
+	if customFunctions && e.IsValid() && e.CanAddr() {
+		err := f.setCustom(e.Addr())
+		if err == nil {
+			return nil
 		}
 	}
 
@@ -167,18 +149,10 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 					return err
 				}
 			} else {
-				/*if e.Field(i).Kind() == reflect.Struct {
-					//e = reflect.NewAt(e.Type(), unsafe.Pointer(e.UnsafeAddr())).Elem()
-					//e.Field(i).Set(reflect.New(e.Field(i).Type()))
-				}*/
 				v = e.Field(i)
-				// v = reflect.New(e.Field(i).Type())
 				if err := f.fuzzStruct(v, customFunctions); err != nil {
 					return err
 				}
-				/*if e.Field(i).CanSet() {
-					e.Field(i).Set(v.Elem())
-				}*/
 			}
 		}
 	case reflect.String:
@@ -310,8 +284,6 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 		if e.CanSet() {
 			e.SetUint(uint64(b))
 		}
-	default:
-		return nil
 	}
 	return nil
 }
@@ -749,7 +721,6 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			if strings.Contains(subDir, "../") || (len(subDir) > 0 && subDir[0] == 47) || strings.Contains(subDir, "\\") {
 				continue
 			}
-			dirPath := filepath.Join(rootDir, subDir)
 			dirPath, err := securejoin.SecureJoin(rootDir, subDir)
 			if err != nil {
 				continue
