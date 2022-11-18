@@ -772,16 +772,15 @@ func (f *ConsumeFuzzer) GetStringFrom(possibleChars string, length int) (string,
 	if (f.dataTotal - f.position) < uint32(length) {
 		return "", errors.New("not enough bytes to create a string")
 	}
-	returnString := ""
+	output := make([]byte, 0, length)
 	for i := 0; i < length; i++ {
 		charIndex, err := f.GetInt()
 		if err != nil {
-			return returnString, err
+			return string(output), err
 		}
-		charToAdd := string(possibleChars[charIndex%len(possibleChars)])
-		returnString = fmt.Sprintf(returnString + charToAdd)
+		output = append(output, possibleChars[charIndex%len(possibleChars)])
 	}
-	return returnString, nil
+	return string(output), nil
 }
 
 func (f *ConsumeFuzzer) GetRune() ([]rune, error) {
