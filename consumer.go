@@ -113,6 +113,22 @@ func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
 			}
 			v.Set(reflect.MakeMap(v.Type()))
 		}
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			var field reflect.Value
+			if !field.Field(i).CanSet() {
+				if f.fuzzUnexportedFields {
+					field = reflect.NewAt(field.Field(i).Type(), unsafe.Pointer(field.Field(i).UnsafeAddr())).Elem()
+					_, ok := f.Funcs[field.Type()]
+					return f.fuzzStruct(field, ok)
+				}
+				return nil
+			} else {
+				field = field.Field(i)
+				_, ok := f.Funcs[field.Type()]
+				return f.fuzzStruct(field, ok)
+			}
+		}
 	default:
 		return fmt.Errorf("could not use a custom function")
 	}
