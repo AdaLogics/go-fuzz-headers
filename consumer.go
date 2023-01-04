@@ -18,7 +18,10 @@ import (
 	securejoin "github.com/cyphar/filepath-securejoin"
 )
 
-var MaxTotalLen uint32 = 2000000
+var (
+	MaxTotalLen uint32 = 2000000
+	maxDepth = 100
+)
 
 func SetMaxTotalLen(newLen uint32) {
 	MaxTotalLen = newLen
@@ -32,6 +35,7 @@ type ConsumeFuzzer struct {
 	NumberOfCalls        int
 	position             uint32
 	fuzzUnexportedFields bool
+	curDepth			 int
 	Funcs                map[reflect.Type]reflect.Value
 }
 
@@ -44,6 +48,7 @@ func NewConsumer(fuzzData []byte) *ConsumeFuzzer {
 		data:      fuzzData,
 		dataTotal: uint32(len(fuzzData)),
 		Funcs:     make(map[reflect.Type]reflect.Value),
+		curDepth:  0,
 	}
 }
 
@@ -113,22 +118,6 @@ func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
 			}
 			v.Set(reflect.MakeMap(v.Type()))
 		}
-	case reflect.Struct:
-		for i := 0; i < v.NumField(); i++ {
-			var field reflect.Value
-			if !field.Field(i).CanSet() {
-				if f.fuzzUnexportedFields {
-					field = reflect.NewAt(field.Field(i).Type(), unsafe.Pointer(field.Field(i).UnsafeAddr())).Elem()
-					_, ok := f.Funcs[field.Type()]
-					return f.fuzzStruct(field, ok)
-				}
-				return nil
-			} else {
-				field = field.Field(i)
-				_, ok := f.Funcs[field.Type()]
-				return f.fuzzStruct(field, ok)
-			}
-		}
 	default:
 		return fmt.Errorf("could not use a custom function")
 	}
@@ -145,6 +134,12 @@ func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
 }
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error {
+	if f.curDepth >= maxDepth {
+		return fmt.Errorf("Too deep")
+	}
+	f.curDepth++
+	defer func() { f.curDepth-- }()
+
 	// We check if we should check for custom functions
 	if customFunctions && e.IsValid() && e.CanAddr() {
 		err := f.setCustom(e.Addr())
