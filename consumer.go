@@ -135,7 +135,8 @@ func (f *ConsumeFuzzer) setCustom(v reflect.Value) error {
 
 func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error {
 	if f.curDepth >= maxDepth {
-		return fmt.Errorf("Too deep")
+		// return err or nil here?
+		return nil
 	}
 	f.curDepth++
 	defer func() { f.curDepth-- }()
