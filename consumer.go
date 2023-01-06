@@ -20,7 +20,7 @@ import (
 
 var (
 	MaxTotalLen uint32 = 2000000
-	maxDepth = 100
+	maxDepth           = 100
 )
 
 func SetMaxTotalLen(newLen uint32) {
@@ -35,7 +35,7 @@ type ConsumeFuzzer struct {
 	NumberOfCalls        int
 	position             uint32
 	fuzzUnexportedFields bool
-	curDepth			 int
+	curDepth             int
 	Funcs                map[reflect.Type]reflect.Value
 }
 
@@ -375,18 +375,11 @@ func (f *ConsumeFuzzer) GetUint16() (uint16, error) {
 }
 
 func (f *ConsumeFuzzer) GetUint32() (uint32, error) {
-	u32, err := f.GetNBytes(4)
+	i, err := f.GetInt()
 	if err != nil {
-		return 0, err
+		return uint32(0), err
 	}
-	littleEndian, err := f.GetBool()
-	if err != nil {
-		return 0, err
-	}
-	if littleEndian {
-		return binary.LittleEndian.Uint32(u32), nil
-	}
-	return binary.BigEndian.Uint32(u32), nil
+	return uint32(i), nil
 }
 
 func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
@@ -443,7 +436,7 @@ func (f *ConsumeFuzzer) GetString() (string, error) {
 	if f.position > MaxTotalLen {
 		return "nil", errors.New("created too large a string")
 	}
-	byteBegin := f.position - 1
+	byteBegin := f.position
 	if byteBegin >= f.dataTotal {
 		return "nil", errors.New("not enough bytes to create string")
 	}
@@ -488,7 +481,7 @@ func returnTarBytes(buf []byte) ([]byte, error) {
 		}
 		fileCounter++
 	}
-	if fileCounter > 4 {
+	if fileCounter >= 1 {
 		return buf, nil
 	}
 	return nil, fmt.Errorf("not enough files were created\n")
@@ -559,6 +552,15 @@ func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
 }
 
 func tooSmallFileBody(length uint32) bool {
+	if length < 2 {
+		return true
+	}
+	if length < 4 {
+		return true
+	}
+	if length < 10 {
+		return true
+	}
 	if length < 100 {
 		return true
 	}
@@ -616,15 +618,10 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 	if remainingBytes == 0 {
 		return nil, errors.New("created too large a string")
 	}
-	if remainingBytes < 50 {
-		length = length % remainingBytes
-	} else if f.dataTotal < 500 {
-		length = length % f.dataTotal
-	}
 	if f.position+length > MaxTotalLen {
 		return nil, errors.New("created too large a string")
 	}
-	byteBegin := f.position - 1
+	byteBegin := f.position
 	if byteBegin >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
@@ -664,7 +661,7 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 	if f.position > MaxTotalLen {
 		return "nil", errors.New("created too large a string")
 	}
-	byteBegin := f.position - 1
+	byteBegin := f.position
 	if byteBegin >= f.dataTotal {
 		return "nil", errors.New("not enough bytes to create string")
 	}
@@ -727,7 +724,7 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 			return returnTarBytes(buf.Bytes())
 		}
 	}
-	return returnTarBytes(buf.Bytes())
+	return buf.Bytes(), nil
 }
 
 // CreateFiles creates pseudo-random files in rootDir.
