@@ -17,7 +17,6 @@ package gofuzzheaders
 import (
 	"archive/tar"
 	"bytes"
-	"fmt"
 	"io"
 	"testing"
 )
@@ -30,9 +29,12 @@ type TestStruct1 struct {
 
 func TestStruct_fuzzing1(t *testing.T) {
 	data := []byte{
-		0x03, 0x41, 0x42, 0x43, // Length and data of field 1 (= 2)
-		0x03, 0x41, 0x42, 0x43, // Length and data of field 2 (= 3)
-		0x01, 0x41, // Field3
+		0x00, 0x00, 0x00, 0x03, // Length of field 1
+		0x41, 0x42, 0x43, // Data of field field 1
+		0x00, 0x00, 0x00, 0x03, // Length of field 2
+		0x41, 0x42, 0x43, // Data of field 2
+		0x00, 0x00, 0x00, 0x01, // Length of field 3
+		0x41, // Data of Field3
 	}
 
 	ts1 := TestStruct1{}
@@ -55,9 +57,11 @@ func TestStruct_fuzzing1(t *testing.T) {
 // Tests that we can create long byte slices in structs
 func TestStruct_fuzzing2(t *testing.T) {
 	data := []byte{
-		0x03, 0x41, 0x42, 0x43, // Length field 1 (= 3)
-		0x03, 0x41, 0x42, 0x43, // Content of Field3
-		0x50,
+		0x00, 0x00, 0x00, 0x03, // Length field 1
+		0x41, 0x42, 0x43, // Data of field 1
+		0x00, 0x00, 0x00, 0x03, // Length of Field2
+		0x41, 0x42, 0x43, // Content of Field2
+		0x00, 0x00, 0x00, 0x50, // Length of field3
 		0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, // All of this
 		0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, // should go
 		0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, // into Field3
@@ -86,13 +90,11 @@ func TestStruct_fuzzing2(t *testing.T) {
 }
 
 func TestTarBytes(t *testing.T) {
-
 	data := []byte{
-		0x01,                                           // number of files
-		0x08,                                           // Length of first file name
+		0x01,                   // number of files
+		0x00, 0x00, 0x00, 0x08, // Length of first file name
 		0x6d, 0x61, 0x6e, 0x69, 0x66, 0x65, 0x73, 0x74, // "manifest"
-		0x09,                                           // Length of file body
-		0x01,                                           // shouldUseLargeFileBody (I think)
+		0x00, 0x00, 0x00, 0x09, // Length of file body
 		0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, // file contents
 		0x04, 0x02, 0x03,
 		0x00, // type flag
@@ -112,13 +114,11 @@ func TestTarBytes(t *testing.T) {
 		if err == io.EOF {
 			break
 		}
-
 		if err != nil {
-			fmt.Println(err)
 			t.Fatal(err)
 		}
 		if header.Typeflag != 48 {
-			t.Fatal("typeflag should be 48 (which is a tar.TypeReg)")
+			t.Fatalf("typeflag should be 48 (which is a tar.TypeReg) but is %v", header.Typeflag)
 		}
 		switch header.Typeflag {
 		case tar.TypeDir:
@@ -127,6 +127,49 @@ func TestTarBytes(t *testing.T) {
 			if header.Name != "manifest" {
 				t.Fatalf("file name was %s but should be 'manifest'\n", header.Name)
 			}
+		}
+	}
+}
+
+func TestGetUint32(t *testing.T) {
+	data := []byte{
+		0x00,
+		0x00,
+		0x03,
+		0x01,
+	}
+	f := NewConsumer(data)
+	i, err := f.GetUint32()
+	if err != nil {
+		t.Fatalf("%v\n", err)
+	}
+	if i != uint32(769) {
+		t.Fatalf("i should be 636 but is %v\n", i)
+	}
+}
+
+func TestGeBytes(t *testing.T) {
+	data := []byte{
+		0x00,
+		0x00,
+		0x03,
+		0x01,
+	}
+	for i := 0; i < 769; i++ {
+		data = append(data, 0x00)
+	}
+	f := NewConsumer(data)
+	b, err := f.GetBytes()
+	if err != nil {
+		t.Fatalf("%v\n", err)
+	}
+	if len(b) != 769 {
+		t.Fatalf("len(b) should be 1749 but is %v\n", len(b))
+	}
+
+	for i := 0; i < 769; i++ {
+		if b[i] != 0 {
+			t.Fatalf("b[%d] should be 0x00 but is %v\n", i, b[i])
 		}
 	}
 }

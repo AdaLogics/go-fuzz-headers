@@ -389,11 +389,11 @@ func (f *ConsumeFuzzer) GetUint16() (uint16, error) {
 }
 
 func (f *ConsumeFuzzer) GetUint32() (uint32, error) {
-	i, err := f.GetInt()
+	u32, err := f.GetNBytes(4)
 	if err != nil {
-		return uint32(0), err
+		return 0, err
 	}
-	return uint32(i), nil
+	return binary.BigEndian.Uint32(u32), nil
 }
 
 func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
@@ -422,14 +422,14 @@ func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
 	if f.position+length > MaxTotalLen {
 		return nil, errors.New("created too large a string")
 	}
-	byteBegin := f.position - 1
+	byteBegin := f.position
 	if byteBegin >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 	if length == 0 {
 		return nil, errors.New("zero-length is not supported")
 	}
-	if byteBegin+length >= f.dataTotal {
+	if byteBegin+length-1 >= f.dataTotal {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 	if byteBegin+length < byteBegin {
@@ -482,6 +482,7 @@ func (f *ConsumeFuzzer) FuzzMap(m interface{}) error {
 }
 
 func returnTarBytes(buf []byte) ([]byte, error) {
+	return buf, nil
 	// Count files
 	var fileCounter int
 	tr := tar.NewReader(bytes.NewReader(buf))
@@ -617,19 +618,10 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
 
-	shouldUseLargeFileBody, err := f.GetBool()
-	if err != nil {
-		return nil, errors.New("not enough bytes to check long file body")
-	}
-
-	if shouldUseLargeFileBody && tooSmallFileBody(length) {
-		return nil, errors.New("File body was too small")
-	}
-
 	// A bit of optimization to attempt to create a file body
 	// when we don't have as many bytes left as "length"
 	remainingBytes := f.dataTotal - f.position
-	if remainingBytes == 0 {
+	if remainingBytes <= 0 {
 		return nil, errors.New("created too large a string")
 	}
 	if f.position+length > MaxTotalLen {
@@ -664,13 +656,8 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 	// A bit of optimization to attempt to create a file name
 	// when we don't have as many bytes left as "length"
 	remainingBytes := f.dataTotal - f.position
-	if remainingBytes == 0 {
+	if remainingBytes <= 0 {
 		return "nil", errors.New("created too large a string")
-	}
-	if remainingBytes < 50 {
-		length = length % remainingBytes
-	} else if f.dataTotal < 500 {
-		length = length % f.dataTotal
 	}
 	if f.position > MaxTotalLen {
 		return "nil", errors.New("created too large a string")
@@ -710,6 +697,7 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
 		}
+
 		sec, err := f.GetInt()
 		if err != nil {
 			return returnTarBytes(buf.Bytes())
