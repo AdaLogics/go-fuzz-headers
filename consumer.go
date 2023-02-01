@@ -676,35 +676,38 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 	return string(f.data[byteBegin:f.position]), nil
 }
 
+type TarFile struct {
+	Hdr  *tar.Header
+	Body []byte
+}
+
 // TarBytes returns valid bytes for a tar archive
 func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 	numberOfFiles, err := f.GetInt()
 	if err != nil {
 		return nil, err
 	}
+	var tarFiles []*TarFile
+	tarFiles = make([]*TarFile, 0)
 
-	var buf bytes.Buffer
-	tw := tar.NewWriter(&buf)
-	defer tw.Close()
-
-	const maxNoOfFiles = 1000
+	const maxNoOfFiles = 100
 	for i := 0; i < numberOfFiles%maxNoOfFiles; i++ {
 		filename, err := f.getTarFilename()
 		if err != nil {
-			return returnTarBytes(buf.Bytes())
+			return []byte(""), err
 		}
 		filebody, err := f.createTarFileBody()
 		if err != nil {
-			return returnTarBytes(buf.Bytes())
+			return []byte(""), err
 		}
 
 		sec, err := f.GetInt()
 		if err != nil {
-			return returnTarBytes(buf.Bytes())
+			return []byte(""), err
 		}
 		nsec, err := f.GetInt()
 		if err != nil {
-			return returnTarBytes(buf.Bytes())
+			return []byte(""), err
 		}
 
 		hdr := &tar.Header{
@@ -714,19 +717,81 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 			ModTime: time.Unix(int64(sec), int64(nsec)),
 		}
 		if err := setTarHeaderTypeflag(hdr, f); err != nil {
-			return returnTarBytes(buf.Bytes())
+			return []byte(""), err
 		}
 		if err := setTarHeaderFormat(hdr, f); err != nil {
-			return returnTarBytes(buf.Bytes())
+			return []byte(""), err
 		}
-		if err := tw.WriteHeader(hdr); err != nil {
-			return returnTarBytes(buf.Bytes())
+		tf := &TarFile{
+			Hdr:  hdr,
+			Body: filebody,
 		}
-		if _, err := tw.Write(filebody); err != nil {
-			return returnTarBytes(buf.Bytes())
-		}
+		tarFiles = append(tarFiles, tf)
+	}
+
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	defer tw.Close()
+
+	for _, tf := range tarFiles {
+		tw.WriteHeader(tf.Hdr)
+		tw.Write(tf.Body)
 	}
 	return buf.Bytes(), nil
+}
+
+// This is similar to TarBytes, but it returns a series of
+// files instead of raw tar bytes. The advantage of this
+// api is that it is cheaper in terms of cpu power to
+// modify or check the files in the fuzzer with TarFiles()
+// because it avoids creating a tar reader.
+func (f *ConsumeFuzzer) TarFiles() ([]*TarFile, error) {
+	numberOfFiles, err := f.GetInt()
+	if err != nil {
+		return nil, err
+	}
+	var tarFiles []*TarFile
+	tarFiles = make([]*TarFile, 0)
+
+	const maxNoOfFiles = 100
+	for i := 0; i < numberOfFiles%maxNoOfFiles; i++ {
+		filename, err := f.getTarFilename()
+		if err != nil {
+			return tarFiles, err
+		}
+		filebody, err := f.createTarFileBody()
+		if err != nil {
+			return tarFiles, err
+		}
+
+		sec, err := f.GetInt()
+		if err != nil {
+			return tarFiles, err
+		}
+		nsec, err := f.GetInt()
+		if err != nil {
+			return tarFiles, err
+		}
+
+		hdr := &tar.Header{
+			Name:    filename,
+			Size:    int64(len(filebody)),
+			Mode:    0o600,
+			ModTime: time.Unix(int64(sec), int64(nsec)),
+		}
+		if err := setTarHeaderTypeflag(hdr, f); err != nil {
+			return tarFiles, err
+		}
+		if err := setTarHeaderFormat(hdr, f); err != nil {
+			return tarFiles, err
+		}
+		tf := &TarFile{
+			Hdr:  hdr,
+			Body: filebody,
+		}
+		tarFiles = append(tarFiles, tf)
+	}
+	return tarFiles, nil
 }
 
 // CreateFiles creates pseudo-random files in rootDir.
