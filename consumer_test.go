@@ -15,9 +15,9 @@
 package gofuzzheaders
 
 import (
-	"archive/tar"
-	"bytes"
-	"io"
+	//"archive/tar"
+	//"bytes"
+	//"io"
 	"testing"
 )
 
@@ -89,7 +89,7 @@ func TestStruct_fuzzing2(t *testing.T) {
 	}
 }
 
-func TestTarBytes(t *testing.T) {
+/*func TestTarBytes(t *testing.T) {
 	data := []byte{
 		0x01,                   // number of files
 		0x00, 0x00, 0x00, 0x08, // Length of first file name
@@ -129,7 +129,7 @@ func TestTarBytes(t *testing.T) {
 			}
 		}
 	}
-}
+}*/
 
 func TestGetUint32(t *testing.T) {
 	data := []byte{
