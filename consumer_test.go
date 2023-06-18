@@ -148,7 +148,7 @@ func TestGetUint32(t *testing.T) {
 	}
 }
 
-func TestGeBytes(t *testing.T) {
+func TestGeBytes1(t *testing.T) {
 	data := []byte{
 		0x00,
 		0x00,
@@ -164,10 +164,62 @@ func TestGeBytes(t *testing.T) {
 		t.Fatalf("%v\n", err)
 	}
 	if len(b) != 769 {
-		t.Fatalf("len(b) should be 1749 but is %v\n", len(b))
+		t.Fatalf("len(b) should be 769 but is %v\n", len(b))
 	}
 
 	for i := 0; i < 769; i++ {
+		if b[i] != 0 {
+			t.Fatalf("b[%d] should be 0x00 but is %v\n", i, b[i])
+		}
+	}
+}
+
+func TestGeBytes2(t *testing.T) {
+	data := []byte{
+		0x00,
+		0x00,
+		0x03,
+		0x01,
+	}
+	for i := 0; i < 767; i++ {
+		data = append(data, 0x00)
+	}
+	f := NewConsumer(data)
+	b, err := f.GetBytes()
+	if err != nil {
+		t.Fatalf("%v\n", err)
+	}
+	if len(b) != 2 {
+		t.Fatalf("len(b) should be 2 but is %v\n", len(b))
+	}
+
+	for i := 0; i < 2; i++ {
+		if b[i] != 0 {
+			t.Fatalf("b[%d] should be 0x00 but is %v\n", i, b[i])
+		}
+	}
+}
+
+func TestGeBytes3(t *testing.T) {
+	data := []byte{
+		0x00,
+		0x00,
+		0x03,
+		0x01,
+	}
+	for i := 0; i < 500; i++ {
+		data = append(data, 0x00)
+	}
+	f := NewConsumer(data)
+	b, err := f.GetBytes()
+	if err != nil {
+		t.Fatalf("%v\n", err)
+	}
+	if len(b) != 269 {
+		t.Fatalf("len(b) should be 269 but is %v\n", len(b))
+	}
+
+	for i := 0; i < 269; i++ {
 		if b[i] != 0 {
 			t.Fatalf("b[%d] should be 0x00 but is %v\n", i, b[i])
 		}

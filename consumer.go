@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -410,35 +411,27 @@ func (f *ConsumeFuzzer) GetUint64() (uint64, error) {
 }
 
 func (f *ConsumeFuzzer) GetBytes() ([]byte, error) {
-	if f.position >= f.dataTotal {
-		return nil, errors.New("not enough bytes to create byte array")
-	}
-
 	var length uint32
 	var err error
 	length, err = f.GetUint32()
 	if err != nil {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
+
 	if length == 0 {
 		length = 30
 	}
 	bytesLeft := f.dataTotal - f.position
-	if bytesLeft == 0 {
+	if bytesLeft <= 0 {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
-	length = length % bytesLeft
+
+	// If the length is the same as bytes left, we will not overflow
+	// the remaining bytes.
+	if length != bytesLeft {
+		length = length % bytesLeft
+	}
 	byteBegin := f.position
-	/*if f.position+length > MaxTotalLen {
-		length =
-		return nil, errors.New("created too large a string")
-	}
-	if byteBegin >= f.dataTotal {
-		return nil, errors.New("not enough bytes to create byte array")
-	}
-	if byteBegin+length-1 >= f.dataTotal {
-		return nil, errors.New("not enough bytes to create byte array")
-	}*/
 	if byteBegin+length < byteBegin {
 		return nil, errors.New("numbers overflow")
 	}
@@ -512,7 +505,8 @@ func returnTarBytes(buf []byte) ([]byte, error) {
 func setTarHeaderFormat(hdr *tar.Header, f *ConsumeFuzzer) error {
 	ind, err := f.GetInt()
 	if err != nil {
-		return err
+		hdr.Format = tar.FormatGNU
+		//return nil
 	}
 	switch ind % 4 {
 	case 0:
@@ -573,54 +567,9 @@ func setTarHeaderTypeflag(hdr *tar.Header, f *ConsumeFuzzer) error {
 	return nil
 }
 
-func tooSmallFileBody(length uint32) bool {
-	if length < 2 {
-		return true
-	}
-	if length < 4 {
-		return true
-	}
-	if length < 10 {
-		return true
-	}
-	if length < 100 {
-		return true
-	}
-	if length < 500 {
-		return true
-	}
-	if length < 1000 {
-		return true
-	}
-	if length < 2000 {
-		return true
-	}
-	if length < 4000 {
-		return true
-	}
-	if length < 8000 {
-		return true
-	}
-	if length < 16000 {
-		return true
-	}
-	if length < 32000 {
-		return true
-	}
-	if length < 64000 {
-		return true
-	}
-	if length < 128000 {
-		return true
-	}
-	if length < 264000 {
-		return true
-	}
-	return false
-}
-
 func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
-	length, err := f.GetUint32()
+	return f.GetBytes()
+	/*length, err := f.GetUint32()
 	if err != nil {
 		return nil, errors.New("not enough bytes to create byte array")
 	}
@@ -648,14 +597,15 @@ func (f *ConsumeFuzzer) createTarFileBody() ([]byte, error) {
 		return nil, errors.New("numbers overflow")
 	}
 	f.position = byteBegin + length
-	return f.data[byteBegin:f.position], nil
+	return f.data[byteBegin:f.position], nil*/
 }
 
 // getTarFileName is similar to GetString(), but creates string based
 // on the length of f.data to reduce the likelihood of overflowing
 // f.data.
 func (f *ConsumeFuzzer) getTarFilename() (string, error) {
-	length, err := f.GetUint32()
+	return f.GetString()
+	/*length, err := f.GetUint32()
 	if err != nil {
 		return "nil", errors.New("not enough bytes to create string")
 	}
@@ -680,7 +630,7 @@ func (f *ConsumeFuzzer) getTarFilename() (string, error) {
 		return "nil", errors.New("numbers overflow")
 	}
 	f.position = byteBegin + length
-	return string(f.data[byteBegin:f.position]), nil
+	return string(f.data[byteBegin:f.position]), nil*/
 }
 
 type TarFile struct {
@@ -699,22 +649,33 @@ func (f *ConsumeFuzzer) TarBytes() ([]byte, error) {
 
 	const maxNoOfFiles = 100
 	for i := 0; i < numberOfFiles%maxNoOfFiles; i++ {
-		filename, err := f.getTarFilename()
+		var filename string
+		var filebody []byte
+		var sec, nsec int
+		var err error
+
+		filename, err = f.getTarFilename()
 		if err != nil {
-			return []byte(""), err
+			var sb strings.Builder
+			sb.WriteString("file-")
+			sb.WriteString(strconv.Itoa(i))
+			filename = sb.String()
 		}
-		filebody, err := f.createTarFileBody()
+		filebody, err = f.createTarFileBody()
 		if err != nil {
-			return []byte(""), err
+			var sb strings.Builder
+			sb.WriteString("filebody-")
+			sb.WriteString(strconv.Itoa(i))
+			filebody = []byte(sb.String())
 		}
 
-		sec, err := f.GetInt()
+		sec, err = f.GetInt()
 		if err != nil {
-			return []byte(""), err
+			sec = 1672531200 // beginning of 2023
 		}
-		nsec, err := f.GetInt()
+		nsec, err = f.GetInt()
 		if err != nil {
-			return []byte(""), err
+			nsec = 1703980800 // end of 2023
 		}
 
 		hdr := &tar.Header{
@@ -787,10 +748,10 @@ func (f *ConsumeFuzzer) TarFiles() ([]*TarFile, error) {
 			ModTime: time.Unix(int64(sec), int64(nsec)),
 		}
 		if err := setTarHeaderTypeflag(hdr, f); err != nil {
-			return tarFiles, err
+			hdr.Typeflag = tar.TypeReg
 		}
 		if err := setTarHeaderFormat(hdr, f); err != nil {
-			return tarFiles, err
+			return tarFiles, err // should not happend
 		}
 		tf := &TarFile{
 			Hdr:  hdr,
@@ -830,10 +791,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 		if strings.Contains(fileName, "..") || (len(fileName) > 0 && fileName[0] == 47) || strings.Contains(fileName, "\\") {
 			continue
 		}
-		fullFilePath, err := filepath.Join(rootDir, fileName)
-		if err != nil {
-			return err
-		}
+		fullFilePath := filepath.Join(rootDir, fileName)
 
 		// Find the subdirectory of the file
 		if subDir := filepath.Dir(fileName); subDir != "" && subDir != "." {
@@ -841,20 +799,14 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			if strings.Contains(subDir, "../") || (len(subDir) > 0 && subDir[0] == 47) || strings.Contains(subDir, "\\") {
 				continue
 			}
-			dirPath, err := filepath.Join(rootDir, subDir)
-			if err != nil {
-				continue
-			}
+			dirPath := filepath.Join(rootDir, subDir)
 			if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 				err2 := os.MkdirAll(dirPath, 0o777)
 				if err2 != nil {
 					continue
 				}
 			}
-			fullFilePath, err = filepath.Join(dirPath, fileName)
-			if err != nil {
-				continue
-			}
+			fullFilePath = filepath.Join(dirPath, fileName)
 		} else {
 			// Create symlink
 			createSymlink, err := f.GetBool()
