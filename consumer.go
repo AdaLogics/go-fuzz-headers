@@ -28,8 +28,6 @@ import (
 	"strings"
 	"time"
 	"unsafe"
-
-	securejoin "github.com/cyphar/filepath-securejoin"
 )
 
 var (
@@ -829,7 +827,10 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 				return errors.New("could not get fileName")
 			}
 		}
-		fullFilePath, err := securejoin.SecureJoin(rootDir, fileName)
+		if strings.Contains(fileName, "..") || (len(fileName) > 0 && fileName[0] == 47) || strings.Contains(fileName, "\\") {
+			continue
+		}
+		fullFilePath, err := filepath.Join(rootDir, fileName)
 		if err != nil {
 			return err
 		}
@@ -840,7 +841,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 			if strings.Contains(subDir, "../") || (len(subDir) > 0 && subDir[0] == 47) || strings.Contains(subDir, "\\") {
 				continue
 			}
-			dirPath, err := securejoin.SecureJoin(rootDir, subDir)
+			dirPath, err := filepath.Join(rootDir, subDir)
 			if err != nil {
 				continue
 			}
@@ -850,7 +851,7 @@ func (f *ConsumeFuzzer) CreateFiles(rootDir string) error {
 					continue
 				}
 			}
-			fullFilePath, err = securejoin.SecureJoin(dirPath, fileName)
+			fullFilePath, err = filepath.Join(dirPath, fileName)
 			if err != nil {
 				continue
 			}
