@@ -158,8 +158,8 @@ func (f *ConsumeFuzzer) fuzzStruct(e reflect.Value, customFunctions bool) error 
 	// We check if we should check for custom functions
 	if customFunctions && e.IsValid() && e.CanAddr() {
 		err := f.setCustom(e.Addr())
-		if err != nil {
-			return err
+		if err == nil {
+			return nil
 		}
 	}
 
