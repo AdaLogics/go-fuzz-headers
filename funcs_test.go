@@ -14,7 +14,6 @@
 
 package gofuzzheaders
 
-/*
 import (
 	"testing"
 )
@@ -42,8 +41,12 @@ type TestStructFuncs4 struct {
 
 func TestStruct_fuzzing_CustomFuncs1(t *testing.T) {
 	data := []byte{
-		0x02, 0x41, 0x42, // Field1
-		0x03, 0x41, 0x42, 0x43, // Field2
+		// ts.Field1.Field1
+		0x00, 0x00, 0x00, 0x02, // 2
+		'A', 'B',
+		// ts.Field2
+		0x00, 0x00, 0x00, 0x03, // 3
+		'A', 'B', 'C',
 	}
 
 	ts1 := TestStructFuncs3{}
@@ -55,13 +58,13 @@ func TestStruct_fuzzing_CustomFuncs1(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 	if ts1.Field1.Field1 != "AB" {
-		t.Errorf("ts1.Field1.Field1 was %v but should be 'AB'", ts1.Field1)
+		t.Errorf("ts1.Field1.Field1 was %v but should be 'AB'", ts1.Field1.Field1)
 	}
 	if ts1.Field1.Field2 != "staticString" {
-		t.Errorf("ts1.Field1.Field2 was %v but should be 'staticString'", ts1.Field1)
+		t.Errorf("ts1.Field1.Field2 was %v but should be 'staticString'", ts1.Field1.Field2)
 	}
 	if ts1.Field2 != "ABC" {
-		t.Errorf("ts1.Field1 was %v but should be 'ABC'", ts1.Field1)
+		t.Errorf("ts1.Field2 was %v but should be 'ABC'", ts1.Field2)
 	}
 }
 
@@ -78,4 +81,3 @@ func testFuncs() []interface{} {
 		},
 	}
 }
-*/
